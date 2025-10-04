@@ -1,0 +1,275 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { 
+  LayoutDashboard, 
+  Package, 
+  ShoppingCart, 
+  Users, 
+  BarChart3, 
+  Settings, 
+  Upload, 
+  Download,
+  Menu,
+  X,
+  LogOut,
+  Bell,
+  Search
+} from 'lucide-react';
+import { useAuthStore } from '@/store/auth';
+import { useLogout } from '@/hooks/useApi';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/toast';
+
+interface AdminLayoutProps {
+  children: React.ReactNode;
+}
+
+export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout: logoutStore } = useAuthStore();
+  const { logout } = useLogout();
+  const { success } = useToast();
+
+  useEffect(() => {
+    // Check if user has admin access
+    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+      router.push('/login');
+    }
+  }, [user, router]);
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      logoutStore();
+      success('До свидания!', 'Вы успешно вышли из админ-панели');
+      router.push('/login');
+    } catch (error) {
+      logoutStore();
+      router.push('/login');
+    }
+  };
+
+  const navigation = [
+    {
+      name: 'Главная',
+      href: '/admin',
+      icon: LayoutDashboard,
+      current: pathname === '/admin',
+    },
+    {
+      name: 'Товары',
+      href: '/admin/products',
+      icon: Package,
+      current: pathname.startsWith('/admin/products'),
+    },
+    {
+      name: 'Заказы',
+      href: '/admin/orders',
+      icon: ShoppingCart,
+      current: pathname.startsWith('/admin/orders'),
+    },
+    {
+      name: 'Клиенты',
+      href: '/admin/customers',
+      icon: Users,
+      current: pathname.startsWith('/admin/customers'),
+    },
+    {
+      name: 'Аналитика',
+      href: '/admin/analytics',
+      icon: BarChart3,
+      current: pathname.startsWith('/admin/analytics'),
+    },
+    {
+      name: 'Настройки',
+      href: '/admin/settings',
+      icon: Settings,
+      current: pathname.startsWith('/admin/settings'),
+    },
+  ];
+
+  if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            Доступ запрещён
+          </h1>
+          <p className="text-gray-600 mb-8">
+            У вас недостаточно прав для доступа к админ-панели
+          </p>
+          <Button onClick={() => router.push('/')}>
+            Вернуться на главную
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile sidebar backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex flex-col h-full">
+          {/* Logo */}
+          <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+            <Link href="/admin" className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">ТК</span>
+              </div>
+              <span className="font-semibold text-gray-900">Админ-панель</span>
+            </Link>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-1 rounded-md hover:bg-gray-100"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Navigation */}
+          <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    item.current
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+
+            {/* Quick actions */}
+            <div className="pt-6 mt-6 border-t border-gray-200">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                Быстрые действия
+              </p>
+              <div className="space-y-2">
+                <Link
+                  href="/admin/products/import"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>Импорт товаров</span>
+                </Link>
+                <Link
+                  href="/admin/products/export"
+                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>Экспорт товаров</span>
+                </Link>
+              </div>
+            </div>
+          </nav>
+
+          {/* User info */}
+          <div className="border-t border-gray-200 p-4">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                <span className="text-sm font-medium text-gray-700">
+                  {user.firstName.charAt(0)}{user.lastName.charAt(0)}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {user.firstName} {user.lastName}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {user.role === 'ADMIN' ? 'Администратор' : 'Менеджер'}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="w-full flex items-center space-x-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Выйти</span>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <div className="lg:pl-64">
+        {/* Top header */}
+        <header className="bg-white shadow-sm border-b border-gray-200">
+          <div className="flex items-center justify-between h-16 px-6">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              
+              {/* Search */}
+              <div className="hidden md:block w-96">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Поиск по админ-панели..."
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              {/* Notifications */}
+              <button className="p-2 rounded-md hover:bg-gray-100 relative">
+                <Bell className="h-5 w-5 text-gray-500" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              </button>
+
+              {/* Site link */}
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/" target="_blank">
+                  Перейти на сайт
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        {/* Page content */}
+        <main className="p-6">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+};
+
+

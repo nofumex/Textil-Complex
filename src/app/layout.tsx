@@ -1,0 +1,66 @@
+import type { Metadata } from 'next';
+import { Inter } from 'next/font/google';
+import './globals.css';
+import { ToastProvider } from '@/components/ui/toast';
+
+const inter = Inter({ subsets: ['latin', 'cyrillic'] });
+
+export const metadata: Metadata = {
+  title: {
+    default: 'Текстиль Комплекс — постельные принадлежности оптом и в розницу',
+    template: '%s | Текстиль Комплекс',
+  },
+  description: 'ООО Текстиль Комплекс — постельные принадлежности в наличии. Работаем с 2004 года. Быстрая доставка собственным автотранспортом. Большой склад, индивидуальная отшивка.',
+  keywords: 'постельное белье, текстиль, постельные принадлежности, оптом, розница, отшивка, доставка',
+  openGraph: {
+    type: 'website',
+    locale: 'ru_RU',
+    url: 'https://textil-kompleks.ru',
+    siteName: 'Текстиль Комплекс',
+    title: 'Текстиль Комплекс — постельные принадлежности с 2004 года',
+    description: 'ООО Текстиль Комплекс — постельные принадлежности в наличии. Работаем с 2004 года. Быстрая доставка собственным автотранспортом.',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'Текстиль Комплекс',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Текстиль Комплекс — постельные принадлежности с 2004 года',
+    description: 'ООО Текстиль Комплекс — постельные принадлежности в наличии. Работаем с 2004 года.',
+    images: ['/og-image.jpg'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="ru" className="scroll-smooth">
+      <body className={inter.className}>
+        <ToastProvider>
+          {children}
+        </ToastProvider>
+      </body>
+    </html>
+  );
+}
+
+
