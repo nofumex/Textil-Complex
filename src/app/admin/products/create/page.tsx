@@ -110,14 +110,53 @@ export default function CreateProductPage() {
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      const newImages = Array.from(files).map(file => URL.createObjectURL(file));
+    if (!files || files.length === 0) return;
+
+    const uploadedPaths: string[] = [];
+    const refreshAuth = async (): Promise<boolean> => {
+      try {
+        const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+        const json = await res.json();
+        return Boolean(json?.success);
+      } catch {
+        return false;
+      }
+    };
+
+    const authorizedUpload = async (fd: FormData): Promise<Response> => {
+      const res = await fetch('/api/upload', { method: 'POST', body: fd, credentials: 'include' });
+      if (res.status === 401) {
+        const refreshed = await refreshAuth();
+        if (!refreshed) throw new Error('AUTH_REQUIRED');
+        return fetch('/api/upload', { method: 'POST', body: fd, credentials: 'include' });
+      }
+      return res;
+    };
+
+    for (const file of Array.from(files)) {
+      const fd = new FormData();
+      fd.append('file', file);
+      try {
+        const res = await authorizedUpload(fd);
+        const json = await res.json();
+        if (json.success && json.path) {
+          uploadedPaths.push(json.path);
+        }
+      } catch (err) {
+        // ignore single-file error; show toast on final
+      }
+    }
+
+    if (uploadedPaths.length > 0) {
       setFormData(prev => ({
         ...prev,
-        images: [...prev.images, ...newImages]
+        images: [...prev.images, ...uploadedPaths]
       }));
+      success('Изображения загружены', `Добавлено: ${uploadedPaths.length}`);
+    } else {
+      error('Ошибка', 'Не удалось загрузить изображения');
     }
   };
 
@@ -140,33 +179,52 @@ export default function CreateProductPage() {
     }
 
     try {
-      const response = await fetch('/api/products', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: formData.title,
-          description: formData.description,
-          sku: formData.sku,
-          category: formData.category,
-          price: parseFloat(formData.price),
-          oldPrice: formData.oldPrice ? parseFloat(formData.oldPrice) : undefined,
-          stock: parseInt(formData.stock),
-          minOrder: parseInt(formData.minOrder),
-          weight: formData.weight ? parseFloat(formData.weight) : undefined,
-          dimensions: formData.dimensions || undefined,
-          material: formData.material || undefined,
-          visibility: formData.status,
-          isActive: formData.isActive,
-          images: formData.images,
-          tags: formData.tags,
-          categoryId: formData.categoryId,
-          seoTitle: formData.seoTitle || undefined,
-          seoDesc: formData.seoDesc || undefined,
-        }),
-      });
+      // Authorized fetch with refresh on 401
+      const refreshAuth = async (): Promise<boolean> => {
+        try {
+          const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+          const json = await res.json();
+          return Boolean(json?.success);
+        } catch {
+          return false;
+        }
+      };
 
+      const doRequest = async () => {
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            title: formData.title,
+            description: formData.description,
+            sku: formData.sku,
+            category: formData.category,
+            price: parseFloat(formData.price),
+            oldPrice: formData.oldPrice ? parseFloat(formData.oldPrice) : undefined,
+            stock: parseInt(formData.stock),
+            minOrder: parseInt(formData.minOrder),
+            weight: formData.weight ? parseFloat(formData.weight) : undefined,
+            dimensions: formData.dimensions || undefined,
+            material: formData.material || undefined,
+            visibility: formData.status,
+            isActive: formData.isActive,
+            images: formData.images,
+            tags: formData.tags,
+            categoryId: formData.categoryId,
+            seoTitle: formData.seoTitle || undefined,
+            seoDesc: formData.seoDesc || undefined,
+          }),
+        });
+        if (res.status === 401) {
+          const refreshed = await refreshAuth();
+          if (!refreshed) throw new Error('AUTH_REQUIRED');
+          return doRequest();
+        }
+        return res;
+      };
+
+      const response = await doRequest();
       const result = await response.json();
 
       if (result.success) {
@@ -179,8 +237,13 @@ export default function CreateProductPage() {
           console.error('Error details:', result.details);
         }
       }
-    } catch (err) {
-      error('Ошибка', 'Не удалось создать товар');
+    } catch (e: any) {
+      if (e?.message === 'AUTH_REQUIRED') {
+        error('Доступ запрещён', 'Пожалуйста, войдите заново');
+        window.location.href = '/login';
+      } else {
+        error('Ошибка', 'Не удалось создать товар');
+      }
     } finally {
       setIsSubmitting(false);
     }

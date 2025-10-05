@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { 
   Plus, 
@@ -22,13 +22,20 @@ import { formatPrice, formatDate, getStockStatus } from '@/lib/utils';
 
 export default function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const { success, error } = useToast();
 
-  // Mock data - в реальном приложении будет загружаться из API
-  const products = [
+  // Mock data (не используется после загрузки из API)
+  const mockProducts = [
     {
       id: '1',
       title: 'Комплект постельного белья "Классик"',
@@ -84,19 +91,91 @@ export default function AdminProductsPage() {
     }
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    setProductToDelete(productId);
+  // Build query string for backend
+  const queryString = useMemo(() => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.set('search', searchQuery);
+    if (categoryFilter) params.set('category', categoryFilter);
+    if (statusFilter) params.set('visibility', statusFilter);
+    params.set('page', String(page));
+    params.set('limit', '20');
+    return params.toString();
+  }, [searchQuery, categoryFilter, statusFilter, page]);
+
+  // Try refresh on 401 and retry request
+  const refreshAuth = async (): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
+      const json = await res.json();
+      return Boolean(json?.success);
+    } catch {
+      return false;
+    }
+  };
+
+  const authorizedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    const res = await fetch(input, { ...init, credentials: 'include' });
+    if (res.status === 401) {
+      const refreshed = await refreshAuth();
+      if (!refreshed) throw new Error('AUTH_REQUIRED');
+      return fetch(input, { ...init, credentials: 'include' });
+    }
+    return res;
+  };
+
+  // Load products from backend
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await authorizedFetch(`/api/admin/products?${queryString}`);
+        if (!res.ok) throw new Error('LOAD_FAILED');
+        const json = await res.json();
+        if (json.success) {
+          setProducts(json.data || []);
+          setPages(json.pagination?.pages || 1);
+          setTotal(json.pagination?.total || 0);
+        } else {
+          error('Ошибка', json.error || 'Не удалось загрузить товары');
+        }
+      } catch (e: any) {
+        if (e?.message === 'AUTH_REQUIRED') {
+          error('Доступ запрещён', 'Пожалуйста, войдите заново');
+          window.location.href = '/login';
+        } else {
+          error('Ошибка', 'Не удалось загрузить товары');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [queryString, error]);
+
+  const handleDeleteProduct = (slug: string) => {
+    setProductToDelete(slug);
     setDeleteModalOpen(true);
   };
 
   const confirmDelete = async () => {
-    if (productToDelete) {
-      try {
-        // API call to delete product
-        success('Товар удалён', 'Товар успешно удалён из каталога');
+    if (!productToDelete) return;
+    try {
+      const res = await authorizedFetch(`/api/products/${productToDelete}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        success('Товар удалён', json.message || 'Товар успешно удалён');
+        setProducts(prev => prev.filter(p => p.slug !== productToDelete));
+        setSelectedProducts([]);
         setDeleteModalOpen(false);
         setProductToDelete(null);
-      } catch (err) {
+      } else {
+        error('Ошибка', json.error || 'Не удалось удалить товар');
+      }
+    } catch (e: any) {
+      if (e?.message === 'AUTH_REQUIRED') {
+        error('Доступ запрещён', 'Пожалуйста, войдите заново');
+        window.location.href = '/login';
+      } else {
         error('Ошибка', 'Не удалось удалить товар');
       }
     }
@@ -111,8 +190,37 @@ export default function AdminProductsPage() {
     try {
       switch (action) {
         case 'delete':
-          // API call to bulk delete
-          success('Товары удалены', `Удалено ${selectedProducts.length} товаров`);
+          try {
+            const res = await authorizedFetch('/api/admin/products', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ productIds: selectedProducts }),
+            });
+            const json = await res.json();
+            if (json.success) {
+              const { deleted = 0, hidden = 0 } = json.data || {};
+              success('Товары удалены', `Удалено: ${deleted}, скрыто: ${hidden}`);
+              // Remove hard-deleted items, keep hidden (they will still be present until filter)
+              if (deleted > 0) {
+                setProducts(prev => prev.filter(p => !selectedProducts.includes(p.id)));
+              }
+              // Update hidden items locally to reflect soft delete
+              if (hidden > 0) {
+                setProducts(prev => prev.map(p => (
+                  selectedProducts.includes(p.id) ? { ...p, isActive: false, visibility: 'HIDDEN' } : p
+                )));
+              }
+            } else {
+              error('Ошибка', json.error || 'Не удалось удалить товары');
+            }
+          } catch (e: any) {
+            if (e?.message === 'AUTH_REQUIRED') {
+              error('Доступ запрещён', 'Пожалуйста, войдите заново');
+              window.location.href = '/login';
+            } else {
+              error('Ошибка', 'Не удалось удалить товары');
+            }
+          }
           break;
         case 'activate':
           // API call to bulk activate
@@ -122,10 +230,39 @@ export default function AdminProductsPage() {
           // API call to bulk deactivate
           success('Товары деактивированы', `Деактивировано ${selectedProducts.length} товаров`);
           break;
-        case 'export':
-          // API call to export selected
-          success('Экспорт запущен', 'Файл будет готов через несколько минут');
+        case 'export': {
+          try {
+            // Export selected via admin export API
+            const res = await authorizedFetch('/api/admin/export', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ productIds: selectedProducts, format: 'csv' })
+            });
+            if (res.ok) {
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `selected_products_${new Date().toISOString().split('T')[0]}.csv`;
+              document.body.appendChild(a);
+              a.click();
+              document.body.removeChild(a);
+              URL.revokeObjectURL(url);
+              success('Экспорт выполнен', 'CSV файл сформирован');
+            } else {
+              const json = await res.json().catch(() => ({}));
+              error('Ошибка', json.error || 'Не удалось экспортировать товары');
+            }
+          } catch (e: any) {
+            if (e?.message === 'AUTH_REQUIRED') {
+              error('Доступ запрещён', 'Пожалуйста, войдите заново');
+              window.location.href = '/login';
+            } else {
+              error('Ошибка', 'Не удалось экспортировать товары');
+            }
+          }
           break;
+        }
       }
       setSelectedProducts([]);
     } catch (err) {
@@ -157,7 +294,7 @@ export default function AdminProductsPage() {
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Управление товарами</h1>
-          <p className="text-gray-600">Всего товаров: {products.length}</p>
+          <p className="text-gray-600">Всего товаров: {total || products.length}</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button variant="outline" asChild>
@@ -166,7 +303,36 @@ export default function AdminProductsPage() {
               Импорт
             </Link>
           </Button>
-          <Button variant="outline">
+          <Button
+            variant="outline"
+            onClick={async () => {
+              try {
+                const res = await authorizedFetch('/api/admin/export');
+                if (!res.ok) {
+                  const json = await res.json().catch(() => ({}));
+                  error('Ошибка', json.error || 'Не удалось экспортировать товары');
+                  return;
+                }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `products_export_${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                success('Экспорт выполнен', 'CSV файл сформирован');
+              } catch (e: any) {
+                if (e?.message === 'AUTH_REQUIRED') {
+                  error('Доступ запрещён', 'Пожалуйста, войдите заново');
+                  window.location.href = '/login';
+                } else {
+                  error('Ошибка', 'Не удалось экспортировать товары');
+                }
+              }
+            }}
+          >
             <Download className="h-4 w-4 mr-2" />
             Экспорт
           </Button>
@@ -196,23 +362,31 @@ export default function AdminProductsPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <select className="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500">
+            <select 
+              className="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500"
+              value={categoryFilter}
+              onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
+            >
               <option value="">Все категории</option>
               <option value="bedding">Постельное белье</option>
               <option value="pillows">Подушки</option>
               <option value="blankets">Одеяла</option>
             </select>
             
-            <select className="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500">
+            <select 
+              className="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500"
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+            >
               <option value="">Все статусы</option>
               <option value="VISIBLE">Опубликованы</option>
               <option value="HIDDEN">Скрыты</option>
               <option value="DRAFT">Черновики</option>
             </select>
             
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setPage(1)}>
               <Filter className="h-4 w-4 mr-2" />
-              Фильтры
+              Применить
             </Button>
           </div>
         </div>
@@ -284,7 +458,17 @@ export default function AdminProductsPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {products.map((product) => {
+              {loading && (
+                <tr>
+                  <td className="px-6 py-8 text-center text-gray-500" colSpan={9}>Загрузка...</td>
+                </tr>
+              )}
+              {!loading && products.length === 0 && (
+                <tr>
+                  <td className="px-6 py-8 text-center text-gray-500" colSpan={9}>Товары не найдены</td>
+                </tr>
+              )}
+              {!loading && products.map((product) => {
                 const stockStatus = getStockStatus(product.stock);
                 
                 return (
@@ -320,7 +504,7 @@ export default function AdminProductsPage() {
                       {product.sku}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-900">
-                      {product.category}
+                      {product.categoryObj?.name || product.category}
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm">
@@ -345,8 +529,8 @@ export default function AdminProductsPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(product.status)}`}>
-                        {getStatusText(product.status)}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(product.visibility)}`}>
+                        {getStatusText(product.visibility)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
@@ -355,19 +539,19 @@ export default function AdminProductsPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end space-x-2">
                         <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/products/${product.sku.toLowerCase()}`} target="_blank">
+                          <Link href={`/products/${product.slug}`} target="_blank">
                             <Eye className="h-4 w-4" />
                           </Link>
                         </Button>
                         <Button variant="ghost" size="sm" asChild>
-                          <Link href={`/admin/products/${product.id}/edit`}>
+                          <Link href={`/admin/products/${product.slug}/edit`}>
                             <Edit className="h-4 w-4" />
                           </Link>
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteProduct(product.id)}
+                          onClick={() => handleDeleteProduct(product.slug)}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -385,17 +569,17 @@ export default function AdminProductsPage() {
         <div className="bg-white px-6 py-3 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <p className="text-sm text-gray-700">
-              Показано <span className="font-medium">1</span> по <span className="font-medium">{products.length}</span> из{' '}
-              <span className="font-medium">{products.length}</span> результатов
+              Показано <span className="font-medium">{Math.min((page - 1) * 20 + 1, total || products.length)}</span> по <span className="font-medium">{Math.min(page * 20, total || products.length)}</span> из{' '}
+              <span className="font-medium">{total || products.length}</span> результатов
             </p>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" disabled>
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
                 Предыдущая
               </Button>
               <Button variant="outline" size="sm" className="bg-primary-600 text-white">
-                1
+                {page}
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" disabled={page >= pages} onClick={() => setPage(p => Math.min(pages, p + 1))}>
                 Следующая
               </Button>
             </div>

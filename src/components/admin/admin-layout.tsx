@@ -30,18 +30,53 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout: logoutStore } = useAuthStore();
+  const { user, setUser, logout: logoutStore } = useAuthStore();
   const { logout } = useLogout();
   const { success } = useToast();
 
   useEffect(() => {
-    // Check if user has admin access
-    if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
-      router.push('/login');
-    }
-  }, [user, router]);
+    let isMounted = true;
+    const hydrateUser = async () => {
+      try {
+        // If we already have a user with correct role, no need to fetch
+        if (user && (user.role === 'ADMIN' || user.role === 'MANAGER')) {
+          if (isMounted) setCheckingAuth(false);
+          return;
+        }
+
+        // Try to fetch current user from server session
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
+        if (res.ok) {
+          const json = await res.json();
+          const fetchedUser = json?.data?.user;
+          if (fetchedUser && (fetchedUser.role === 'ADMIN' || fetchedUser.role === 'MANAGER')) {
+            setUser(fetchedUser);
+            if (isMounted) setCheckingAuth(false);
+            return;
+          }
+        }
+
+        // Not authorized
+        if (isMounted) {
+          setCheckingAuth(false);
+          router.push('/login');
+        }
+      } catch {
+        if (isMounted) {
+          setCheckingAuth(false);
+          router.push('/login');
+        }
+      }
+    };
+
+    hydrateUser();
+    return () => {
+      isMounted = false;
+    };
+  }, [user, setUser, router]);
 
   const handleLogout = async () => {
     try {
@@ -93,6 +128,17 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       current: pathname.startsWith('/admin/settings'),
     },
   ];
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">Загрузка...</h1>
+          <p className="text-gray-600">Проверяем доступ к админ-панели</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user || (user.role !== 'ADMIN' && user.role !== 'MANAGER')) {
     return (
