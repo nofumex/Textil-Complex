@@ -1,0 +1,70 @@
+'use client';
+
+import React, { useState } from 'react';
+import { ShoppingCart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useCartStore } from '@/store/cart';
+import { useToast } from '@/components/ui/toast';
+import { Product } from '@/types/index';
+
+interface ProductActionsProps {
+  product: Product;
+}
+
+export const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
+  const { addItem, openCart } = useCartStore();
+  const { success } = useToast();
+  const [isAdding, setIsAdding] = useState(false);
+
+  const canBuy = product.isInStock && (product.stock ?? 0) > 0;
+
+  const handleAddToCart = async () => {
+    if (!canBuy) return;
+    setIsAdding(true);
+    try {
+      addItem(product, 1);
+      success('Товар добавлен', `${product.title} добавлен в корзину`);
+      openCart();
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  const handleBuyNow = async () => {
+    if (!canBuy) return;
+    setIsAdding(true);
+    try {
+      addItem(product, 1);
+      window.location.href = '/checkout';
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <Button
+        className="w-full"
+        onClick={handleAddToCart}
+        disabled={!canBuy || isAdding}
+      >
+        <ShoppingCart className="h-4 w-4 mr-2" />
+        {canBuy ? 'В корзину' : 'Нет в наличии'}
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full"
+        onClick={handleBuyNow}
+        disabled={!canBuy || isAdding}
+      >
+        Купить
+      </Button>
+    </div>
+  );
+};
+
+export default ProductActions;
+
+

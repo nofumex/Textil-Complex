@@ -1,8 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
-import { api } from '@/hooks/useApi';
+import ProductActions from '@/components/product/product-actions';
 
 interface ProductPageProps {
   params: { slug: string };
@@ -30,13 +28,13 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                <img src={product.images?.[0] || '/product-placeholder.jpg'} alt={product.title} className="w-full h-full object-cover" />
+                <img src={product.images?.[0] || 'https://placehold.co/800x800?text=No+Image'} alt={product.title} className="w-full h-full object-cover" />
               </div>
               {product.images?.length > 1 && (
                 <div className="mt-4 grid grid-cols-4 gap-2">
                   {product.images.slice(0, 4).map((src: string, i: number) => (
                     <div key={i} className="aspect-square bg-gray-100 rounded overflow-hidden">
-                      <img src={src} alt={`${product.title} ${i + 1}`} className="w-full h-full object-cover" />
+                      <img src={src || 'https://placehold.co/200x200?text=No+Image'} alt={`${product.title} ${i + 1}`} className="w-full h-full object-cover" />
                     </div>
                   ))}
                 </div>
@@ -55,12 +53,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 <p>{product.description}</p>
                 {product.content && <div dangerouslySetInnerHTML={{ __html: product.content }} />}
               </div>
-              <div className="space-y-2 text-sm text-gray-600">
+              <div className="space-y-2 text-sm text-gray-600 mb-6">
                 {product.dimensions && <div>Размеры: {product.dimensions}</div>}
                 {product.weight && <div>Вес: {product.weight} кг</div>}
                 <div>Наличие: {product.isInStock ? 'В наличии' : 'Нет в наличии'}</div>
                 <div>Артикул: {product.sku}</div>
               </div>
+
+              {/* Actions */}
+              <ProductActions product={product} />
             </div>
           </div>
         </div>

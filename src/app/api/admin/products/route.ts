@@ -35,11 +35,31 @@ export async function GET(request: NextRequest) {
       where.isActive = params.isActive === 'true';
     }
 
+    // Sorting
+    let orderBy: any = { createdAt: 'desc' };
+    if (params.sortBy) {
+      const sortOrder = (params.sortOrder === 'asc' || params.sortOrder === 'desc') ? params.sortOrder : 'desc';
+      switch (params.sortBy) {
+        case 'price':
+          orderBy = { price: sortOrder };
+          break;
+        case 'name':
+          orderBy = { title: sortOrder };
+          break;
+        case 'stock':
+          orderBy = { stock: sortOrder };
+          break;
+        case 'createdAt':
+        default:
+          orderBy = { createdAt: sortOrder };
+      }
+    }
+
     const [products, total] = await Promise.all([
       db.product.findMany({
         where,
         include: { categoryObj: true, _count: { select: { reviews: true } } },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: limit,
       }),

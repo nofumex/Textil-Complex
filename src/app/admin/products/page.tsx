@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Modal } from '@/components/ui/modal';
 import { useToast } from '@/components/ui/toast';
 import { formatPrice, formatDate, getStockStatus } from '@/lib/utils';
+import { useCategories } from '@/hooks/useApi';
 
 export default function AdminProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -32,7 +33,10 @@ export default function AdminProductsPage() {
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [sortBy, setSortBy] = useState<'createdAt' | 'price' | 'name' | 'stock'>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const { success, error } = useToast();
+  const { data: categories } = useCategories();
 
   // Mock data (не используется после загрузки из API)
   const mockProducts = [
@@ -99,8 +103,10 @@ export default function AdminProductsPage() {
     if (statusFilter) params.set('visibility', statusFilter);
     params.set('page', String(page));
     params.set('limit', '20');
+    params.set('sortBy', sortBy);
+    params.set('sortOrder', sortOrder);
     return params.toString();
-  }, [searchQuery, categoryFilter, statusFilter, page]);
+  }, [searchQuery, categoryFilter, statusFilter, page, sortBy, sortOrder]);
 
   // Try refresh on 401 and retry request
   const refreshAuth = async (): Promise<boolean> => {
@@ -368,9 +374,9 @@ export default function AdminProductsPage() {
               onChange={(e) => { setCategoryFilter(e.target.value); setPage(1); }}
             >
               <option value="">Все категории</option>
-              <option value="bedding">Постельное белье</option>
-              <option value="pillows">Подушки</option>
-              <option value="blankets">Одеяла</option>
+              {Array.isArray(categories) && categories.map((cat: any) => (
+                <option key={cat.id} value={cat.slug}>{cat.name}</option>
+              ))}
             </select>
             
             <select 
@@ -382,6 +388,26 @@ export default function AdminProductsPage() {
               <option value="VISIBLE">Опубликованы</option>
               <option value="HIDDEN">Скрыты</option>
               <option value="DRAFT">Черновики</option>
+            </select>
+
+            <select
+              className="rounded-md border-gray-300 text-sm focus:border-primary-500 focus:ring-primary-500"
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [sb, so] = e.target.value.split('-') as any;
+                setSortBy(sb);
+                setSortOrder(so);
+                setPage(1);
+              }}
+            >
+              <option value="createdAt-desc">Новее сначала</option>
+              <option value="createdAt-asc">Старее сначала</option>
+              <option value="price-asc">Цена: по возрастанию</option>
+              <option value="price-desc">Цена: по убыванию</option>
+              <option value="name-asc">Название: А-Я</option>
+              <option value="name-desc">Название: Я-А</option>
+              <option value="stock-desc">Склад: больше сначала</option>
+              <option value="stock-asc">Склад: меньше сначала</option>
             </select>
             
             <Button variant="outline" size="sm" onClick={() => setPage(1)}>

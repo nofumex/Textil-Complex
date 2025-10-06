@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Star, ShoppingCart, Eye, Heart } from 'lucide-react';
+import { ShoppingCart, Eye, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cart';
 import { useFavoritesStore } from '@/store/favorites';
@@ -105,22 +105,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 </p>
               )}
 
-              {/* Rating */}
-              {product.averageRating && product.averageRating > 0 && (
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="flex items-center">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        className={`h-4 w-4 ${i < Math.floor(product.averageRating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-sm text-gray-600">
-                    {product.averageRating.toFixed(1)} ({product._count?.reviews || 0})
-                  </span>
-                </div>
-              )}
+              
             </div>
 
             {/* Price and actions */}
@@ -176,7 +161,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       <div className="relative aspect-square overflow-hidden">
         <Link href={`/products/${product.slug}`}>
           <img
-            src={product.images[0] || '/placeholder-product.jpg'}
+            src={(Array.isArray(product.images) && product.images[0]) || '/placeholder-product.jpg'}
             alt={product.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -228,22 +213,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
       {/* Content */}
       <div className="p-6">
-        {/* Rating */}
-        {product.averageRating && product.averageRating > 0 && (
-          <div className="flex items-center gap-2 mb-3">
-            <div className="flex items-center">
-              {[...Array(5)].map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-4 w-4 ${i < Math.floor(product.averageRating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                />
-              ))}
-            </div>
-            <span className="text-sm text-gray-600">
-              {product.averageRating.toFixed(1)} ({product._count?.reviews || 0})
-            </span>
-          </div>
-        )}
+        
 
         {/* Title */}
         <Link href={`/products/${product.slug}`}>
@@ -256,6 +226,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {product.material && (
           <p className="text-sm text-gray-600 mb-3">
             {product.material}
+          </p>
+        )}
+
+        {/* Description */}
+        {product.description && (
+          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+            {product.description}
           </p>
         )}
 
@@ -293,7 +270,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 }
               }}
             >
-              Купить в 1 клик
+              Купить
             </span>
           </Button>
         </div>

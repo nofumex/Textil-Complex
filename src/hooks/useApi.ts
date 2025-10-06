@@ -189,6 +189,55 @@ export function useProducts(filters?: any) {
   });
 }
 
+// Products list with query params and pagination support for catalog
+export function useProductsList(filters?: any) {
+  const [data, setData] = useState<any[] | null>(null);
+  const [pagination, setPagination] = useState<{ page: number; limit: number; total: number; pages: number } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const params = new URLSearchParams();
+        if (filters) {
+          Object.entries(filters).forEach(([key, value]) => {
+            if (value === undefined || value === null || value === '') return;
+            if (Array.isArray(value)) {
+              value.forEach((v) => params.append(key, String(v)));
+            } else {
+              params.append(key, String(value));
+            }
+          });
+        }
+
+        const url = `/products${params.toString() ? `?${params.toString()}` : ''}`;
+        const response = await api.get(url);
+        const result: ApiResponse = response.data;
+
+        if (result.success) {
+          setData(result.data);
+          setPagination((result as any).pagination || null);
+        } else {
+          setError(result.error || 'Произошла ошибка');
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Произошла ошибка';
+        setError(errorMessage);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [JSON.stringify(filters)]);
+
+  return { data, pagination, loading, error };
+}
+
 export function useProduct(slug: string) {
   return useApi(`/products/${slug}`, {
     immediate: !!slug,

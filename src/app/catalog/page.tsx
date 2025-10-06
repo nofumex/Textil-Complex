@@ -3,10 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, Filter, Grid, List, SlidersHorizontal } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useProducts, useCategories } from '@/hooks/useApi';
+import { useProductsList, useCategories } from '@/hooks/useApi';
+import { debounce, getImageUrl } from '@/lib/utils';
 import { ProductCard } from '@/components/product/product-card';
 import { ProductFilters } from '@/components/product/product-filters';
 import { Header } from '@/components/layout/header';
@@ -18,6 +19,8 @@ export default function CatalogPage() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showFilters, setShowFilters] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(12);
   const [filters, setFilters] = useState({
     category: '',
     priceMin: undefined as number | undefined,
@@ -29,14 +32,17 @@ export default function CatalogPage() {
     sortOrder: 'desc',
   });
 
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: products, loading: productsLoading } = useProducts({ ...filters, search: searchQuery });
+  const { data: products, pagination, loading: productsLoading } = useProductsList({ ...filters, search: searchQuery, page, limit });
   const { data: categories } = useCategories();
 
   useEffect(() => {
     // Apply URL params on load
     const category = searchParams.get('category');
     const search = searchParams.get('search');
+    const pageParam = searchParams.get('page');
+    const limitParam = searchParams.get('limit');
     
     if (category) {
       setFilters(prev => ({ ...prev, category }));
@@ -44,15 +50,40 @@ export default function CatalogPage() {
     if (search) {
       setSearchQuery(search);
     }
+    if (pageParam) setPage(Number(pageParam) || 1);
+    if (limitParam) setLimit(Number(limitParam) || 12);
   }, [searchParams]);
 
   const handleFilterChange = (newFilters: Partial<typeof filters>) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
+    setPage(1); // reset page on filter change
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries({ ...filters, ...newFilters, search: searchQuery, page: 1, limit }).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') {
+        params.delete(key);
+      } else {
+        params.set(key, String(value));
+      }
+    });
+    router.push(`/catalog?${params.toString()}`);
   };
+
+  // Debounced search syncing to URL
+  const syncSearch = React.useMemo(() => debounce((value: string) => {
+    setPage(1);
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set('search', value); else params.delete('search');
+    params.set('page', '1');
+    params.set('limit', String(limit));
+    Object.entries(filters).forEach(([key, v]) => {
+      if (v === undefined || v === null || v === '') params.delete(key); else params.set(key, String(v));
+    });
+    router.push(`/catalog?${params.toString()}`);
+  }, 400), [searchParams, router, filters, limit]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Search is handled by useProducts hook automatically
+    syncSearch(searchQuery);
   };
 
   const breadcrumbItems = [
@@ -108,7 +139,10 @@ export default function CatalogPage() {
                       <Input
                         type="text"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          syncSearch(e.target.value);
+                        }}
                         placeholder="Поиск товаров..."
                         className="pl-10"
                       />
@@ -165,7 +199,7 @@ export default function CatalogPage() {
               {/* Results count */}
               <div className="mb-6">
                 <p className="text-gray-600">
-                  {productsLoading ? 'Загрузка...' : `Найдено ${products?.length || 0} товаров`}
+                  {productsLoading ? 'Загрузка...' : `Найдено ${pagination?.total || products?.length || 0} товаров`}
                 </p>
               </div>
 
@@ -192,7 +226,7 @@ export default function CatalogPage() {
                   {products.map((product) => (
                     <ProductCard
                       key={product.id}
-                      product={product}
+                      product={{ ...product, images: Array.isArray(product.images) ? product.images : [] }}
                       viewMode={viewMode}
                     />
                   ))}
@@ -227,18 +261,54 @@ export default function CatalogPage() {
               )}
 
               {/* Pagination */}
-              {products && products.length > 0 && (
+              {pagination && pagination.pages > 1 && (
                 <div className="mt-12 flex justify-center">
                   <div className="flex items-center space-x-2">
-                    <Button variant="outline" disabled>
+                    <Button
+                      variant="outline"
+                      disabled={page <= 1}
+                      onClick={() => {
+                        const newPage = Math.max(1, page - 1);
+                        setPage(newPage);
+                        const params = new URLSearchParams(searchParams.toString());
+                        params.set('page', String(newPage));
+                        params.set('limit', String(limit));
+                        router.push(`/catalog?${params.toString()}`);
+                      }}
+                    >
                       Предыдущая
                     </Button>
-                    <Button variant="outline" className="bg-primary-600 text-white">
-                      1
-                    </Button>
-                    <Button variant="outline">2</Button>
-                    <Button variant="outline">3</Button>
-                    <Button variant="outline">
+                    {Array.from({ length: pagination.pages }).map((_, idx) => {
+                      const p = idx + 1;
+                      return (
+                        <Button
+                          key={p}
+                          variant="outline"
+                          className={p === page ? 'bg-primary-600 text-white' : ''}
+                          onClick={() => {
+                            setPage(p);
+                            const params = new URLSearchParams(searchParams.toString());
+                            params.set('page', String(p));
+                            params.set('limit', String(limit));
+                            router.push(`/catalog?${params.toString()}`);
+                          }}
+                        >
+                          {p}
+                        </Button>
+                      );
+                    })}
+                    <Button
+                      variant="outline"
+                      disabled={page >= pagination.pages}
+                      onClick={() => {
+                        const newPage = Math.min(pagination.pages, page + 1);
+                        setPage(newPage);
+                        const params = new URLSearchParams(searchParams.toString());
+                        params.set('page', String(newPage));
+                        params.set('limit', String(limit));
+                        router.push(`/catalog?${params.toString()}`);
+                      }}
+                    >
                       Следующая
                     </Button>
                   </div>

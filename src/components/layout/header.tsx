@@ -13,6 +13,8 @@ export const Header: React.FC = () => {
   const [mounted, setMounted] = useState(false);
   React.useEffect(() => setMounted(true), []);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [mobileSearchTerm, setMobileSearchTerm] = useState('');
   const { user, isAuthenticated } = useAuthStore();
   const { getTotalItems } = useCartStore();
   const router = useRouter();
@@ -87,6 +89,14 @@ export const Header: React.FC = () => {
                 type="text"
                 placeholder="Поиск товаров..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const q = searchTerm.trim();
+                    if (q) router.push(`/catalog?search=${encodeURIComponent(q)}`);
+                  }
+                }}
               />
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
@@ -162,6 +172,17 @@ export const Header: React.FC = () => {
                 type="text"
                 placeholder="Поиск товаров..."
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                value={mobileSearchTerm}
+                onChange={(e) => setMobileSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    const q = mobileSearchTerm.trim();
+                    if (q) {
+                      setIsMenuOpen(false);
+                      router.push(`/catalog?search=${encodeURIComponent(q)}`);
+                    }
+                  }
+                }}
               />
               <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
             </div>
