@@ -341,10 +341,12 @@ export function generateSampleCSV(): string {
     },
   ];
 
-  return Papa.unparse(sampleData, {
+  const csv = Papa.unparse(sampleData, {
     header: true,
-    encoding: 'utf-8',
+    delimiter: ';',
+    newline: '\r\n',
   });
+  return '\uFEFF' + csv;
 }
 
 export function validateCSVStructure(csvContent: string): { isValid: boolean; errors: string[]; columns: string[] } {
@@ -410,10 +412,432 @@ export async function exportProductsToCSV(filters?: any): Promise<string> {
     visibility: product.visibility,
   }));
 
-  return Papa.unparse(csvData, {
+  const csv = Papa.unparse(csvData, {
     header: true,
-    encoding: 'utf-8',
+    delimiter: ';',
+    newline: '\r\n',
   });
+  return '\uFEFF' + csv;
 }
+
+
+
+
+
+        visibility = 'DRAFT';
+
+      }
+
+    }
+
+
+
+    // Prepare product data
+
+    const productData = {
+
+      sku,
+
+      title: row.title,
+
+      slug,
+
+      description: row.description || '',
+
+      price,
+
+      oldPrice,
+
+      currency: row.currency || 'RUB',
+
+      stock,
+
+      material: row.material || '',
+
+      dimensions: row.dimensions || '',
+
+      weight,
+
+      category: productCategory,
+
+      tags,
+
+      images,
+
+      categoryId,
+
+      visibility,
+
+      isActive: true,
+
+      isInStock: stock > 0,
+
+      seoTitle: row.seo_title || '',
+
+      seoDesc: row.seo_description || '',
+
+      metaTitle: row.seo_title || row.title,
+
+      metaDesc: row.seo_description || row.description || '',
+
+    };
+
+
+
+    if (options.validateOnly) {
+
+      // Just validate, don't save
+
+      return;
+
+    }
+
+
+
+    // Check if product exists
+
+    const existingProduct = await db.product.findFirst({
+
+      where: {
+
+        OR: [
+
+          { sku: sku },
+
+          { slug: slug },
+
+        ],
+
+      },
+
+    });
+
+
+
+    if (existingProduct) {
+
+      if (options.updateExisting) {
+
+        // Update existing product
+
+        await db.product.update({
+
+          where: { id: existingProduct.id },
+
+          data: productData,
+
+        });
+
+        this.updated++;
+
+        this.warnings.push(`Строка ${rowNumber}: Товар "${row.title}" обновлён`);
+
+      } else {
+
+        this.warnings.push(`Строка ${rowNumber}: Товар с SKU "${sku}" уже существует (пропущен)`);
+
+      }
+
+    } else {
+
+      // Create new product
+
+      await db.product.create({
+
+        data: productData,
+
+      });
+
+      this.created++;
+
+    }
+
+  }
+
+
+
+  private reset(): void {
+
+    this.errors = [];
+
+    this.warnings = [];
+
+    this.processed = 0;
+
+    this.created = 0;
+
+    this.updated = 0;
+
+  }
+
+
+
+  private getResult(): ImportResult {
+
+    return {
+
+      success: this.errors.length === 0,
+
+      processed: this.processed,
+
+      created: this.created,
+
+      updated: this.updated,
+
+      errors: this.errors,
+
+      warnings: this.warnings,
+
+    };
+
+  }
+
+}
+
+
+
+export function generateSampleCSV(): string {
+
+  const sampleData = [
+
+    {
+
+      product_id: '',
+
+      sku: 'BED001',
+
+      title: 'Комплект постельного белья "Образец"',
+
+      category: 'Постельное белье',
+
+      price: '2500',
+
+      currency: 'RUB',
+
+      old_price: '3000',
+
+      stock: '10',
+
+      description: 'Качественный комплект постельного белья',
+
+      material: '100% хлопок',
+
+      size: '1.5-спальный',
+
+      dimensions: '145x210 см',
+
+      weight: '1.2',
+
+      tags: 'хлопок,1.5-спальный,комплект',
+
+      images: 'https://example.com/image1.jpg,https://example.com/image2.jpg',
+
+      seo_title: 'Комплект постельного белья Образец - купить в Москве',
+
+      seo_description: 'Качественный комплект постельного белья из 100% хлопка',
+
+      slug: 'komplekt-obrazets',
+
+      visibility: 'VISIBLE',
+
+    },
+
+    {
+
+      product_id: '',
+
+      sku: 'PIL001',
+
+      title: 'Подушка ортопедическая "Образец"',
+
+      category: 'Подушки',
+
+      price: '1200',
+
+      currency: 'RUB',
+
+      old_price: '',
+
+      stock: '15',
+
+      description: 'Ортопедическая подушка для комфортного сна',
+
+      material: 'Пенополиуретан',
+
+      size: '60x40 см',
+
+      dimensions: '60x40x12 см',
+
+      weight: '0.8',
+
+      tags: 'ортопедическая,подушка,пенополиуретан',
+
+      images: 'https://example.com/pillow1.jpg',
+
+      seo_title: 'Ортопедическая подушка Образец',
+
+      seo_description: 'Удобная ортопедическая подушка для здорового сна',
+
+      slug: 'podushka-obrazets',
+
+      visibility: 'VISIBLE',
+
+    },
+
+  ];
+
+
+
+  return Papa.unparse(sampleData, {
+
+    header: true,
+
+    encoding: 'utf-8',
+
+  });
+
+}
+
+
+
+export function validateCSVStructure(csvContent: string): { isValid: boolean; errors: string[]; columns: string[] } {
+
+  const errors: string[] = [];
+
+  
+
+  try {
+
+    const parseResult = Papa.parse(csvContent, {
+
+      header: true,
+
+      preview: 1,
+
+    });
+
+
+
+    if (parseResult.errors.length > 0) {
+
+      errors.push(...parseResult.errors.map(e => e.message));
+
+      return { isValid: false, errors, columns: [] };
+
+    }
+
+
+
+    const columns = parseResult.meta.fields || [];
+
+    const requiredColumns = ['sku', 'title', 'category', 'price', 'stock'];
+
+    const missingColumns = requiredColumns.filter(col => !columns.includes(col));
+
+
+
+    if (missingColumns.length > 0) {
+
+      errors.push(`Отсутствуют обязательные колонки: ${missingColumns.join(', ')}`);
+
+    }
+
+
+
+    return {
+
+      isValid: errors.length === 0,
+
+      errors,
+
+      columns,
+
+    };
+
+  } catch (error) {
+
+    errors.push('Ошибка при анализе CSV файла');
+
+    return { isValid: false, errors, columns: [] };
+
+  }
+
+}
+
+
+
+export async function exportProductsToCSV(filters?: any): Promise<string> {
+
+  const products = await db.product.findMany({
+
+    include: {
+
+      categoryObj: true,
+
+    },
+
+    where: filters,
+
+  });
+
+
+
+  const csvData = products.map(product => ({
+
+    product_id: product.id,
+
+    sku: product.sku,
+
+    title: product.title,
+
+    category: product.categoryObj.name,
+
+    price: product.price.toString(),
+
+    currency: product.currency,
+
+    old_price: product.oldPrice?.toString() || '',
+
+    stock: product.stock.toString(),
+
+    description: product.description || '',
+
+    material: product.material || '',
+
+    size: '', // You might want to get this from variants
+
+    dimensions: product.dimensions || '',
+
+    weight: product.weight?.toString() || '',
+
+    tags: product.tags.join(','),
+
+    images: product.images.join(','),
+
+    seo_title: product.seoTitle || '',
+
+    seo_description: product.seoDesc || '',
+
+    slug: product.slug,
+
+    visibility: product.visibility,
+
+  }));
+
+
+
+  return Papa.unparse(csvData, {
+
+    header: true,
+
+    encoding: 'utf-8',
+
+  });
+
+}
+
+
+
+
 
 

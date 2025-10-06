@@ -58,6 +58,11 @@
   }
 }
 
+/* Hide public site header/footer on admin pages */
+body.admin-page header, body.admin-page footer {
+  display: none;
+}
+
 @layer components {
   .animate-slide-up {
     animation: slideUp 0.3s ease-out;

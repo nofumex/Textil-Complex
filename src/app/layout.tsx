@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { Header } from '@/components/layout/header';
+import { Footer } from '@/components/layout/footer';
+import { CartDrawer } from '@/components/cart/cart-drawer';
 import { ToastProvider } from '@/components/ui/toast';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] });
@@ -56,7 +59,10 @@ export default function RootLayout({
     <html lang="ru" className="scroll-smooth">
       <body className={inter.className}>
         <ToastProvider>
+          <Header />
           {children}
+          <Footer />
+          <CartDrawer />
         </ToastProvider>
       </body>
     </html>

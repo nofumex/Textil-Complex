@@ -31,6 +31,13 @@ interface AdminLayoutProps {
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  // Hide public site header/footer on admin pages
+  useEffect(() => {
+    document.body.classList.add('admin-page');
+    return () => {
+      document.body.classList.remove('admin-page');
+    };
+  }, []);
   const pathname = usePathname();
   const router = useRouter();
   const { user, setUser, logout: logoutStore } = useAuthStore();

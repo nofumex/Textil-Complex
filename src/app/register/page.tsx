@@ -46,7 +46,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      {/* Header is global from RootLayout */}
       
       <main className="flex-1 bg-gray-50 py-12">
         <div className="container mx-auto px-4">
@@ -184,7 +184,7 @@ export default function RegisterPage() {
         </div>
       </main>
       
-      <Footer />
+      {/* Footer is global from RootLayout */}
     </div>
   );
 }

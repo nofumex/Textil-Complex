@@ -62,7 +62,8 @@ export default function CatalogPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      {/* Header is global from RootLayout; remove local header to avoid duplication */}
+      {/* <Header /> */}
       
       <BreadcrumbStructuredData items={breadcrumbItems} />
       
@@ -282,7 +283,8 @@ export default function CatalogPage() {
         )}
       </main>
       
-      <Footer />
+      {/* Footer is global from RootLayout; remove local footer to avoid duplication */}
+      {/* <Footer /> */}
     </div>
   );
 }

@@ -7,13 +7,15 @@ import { useAuthStore } from '@/store/auth';
 import { useCartStore } from '@/store/cart';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 export const Header: React.FC = () => {
   const [mounted, setMounted] = useState(false);
   React.useEffect(() => setMounted(true), []);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAuthenticated } = useAuthStore();
-  const { getTotalItems, toggleCart } = useCartStore();
+  const { getTotalItems } = useCartStore();
+  const router = useRouter();
   const cartItemsCount = getTotalItems();
 
   const navigation = [
@@ -94,7 +96,7 @@ export const Header: React.FC = () => {
           <div className="flex items-center space-x-4">
             {/* Cart */}
             <button
-              onClick={toggleCart}
+              onClick={() => router.push('/cart')}
               className="relative p-2 text-gray-600 hover:text-primary-600 transition-colors"
             >
               <ShoppingCart className="h-6 w-6" />

@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { Star, ShoppingCart, Eye, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cart';
+import { useFavoritesStore } from '@/store/favorites';
 import { useToast } from '@/components/ui/toast';
 import { formatPrice, getStockStatus } from '@/lib/utils';
 import { ProductWithDetails } from '@/types';
+import { useRouter } from 'next/navigation';
 
 interface ProductCardProps {
   product: ProductWithDetails;
@@ -21,6 +23,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const { addItem } = useCartStore();
   const { success } = useToast();
   const stockStatus = getStockStatus(product.stock);
+  const { toggle, has } = useFavoritesStore();
+  const router = useRouter();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -214,7 +218,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           <Button
             size="sm"
             variant="ghost"
-            className="text-white hover:text-white hover:bg-white/20"
+            className={`hover:text-white hover:bg-white/20 ${has(product.id) ? 'text-red-400' : 'text-white'}`}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(product.id); }}
           >
             <Heart className="h-4 w-4" />
           </Button>
@@ -278,7 +283,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </Button>
           
           <Button variant="outline" size="sm" className="w-full">
-            Купить в 1 клик
+            <span
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (product.isInStock && product.stock > 0) {
+                  addItem(product);
+                  router.push('/checkout');
+                }
+              }}
+            >
+              Купить в 1 клик
+            </span>
           </Button>
         </div>
       </div>

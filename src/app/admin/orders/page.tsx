@@ -172,8 +172,10 @@ export default function OrdersPage() {
                           </span>
                         </div>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4" />
+                          <Button variant="outline" size="sm" asChild>
+                            <a href={`/admin/orders/${order.id}`}>
+                              <Eye className="h-4 w-4" />
+                            </a>
                           </Button>
                           <Button variant="outline" size="sm">
                             <Edit className="h-4 w-4" />

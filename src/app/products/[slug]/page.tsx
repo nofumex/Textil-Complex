@@ -9,7 +9,10 @@ interface ProductPageProps {
 }
 
 async function fetchProduct(slug: string) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || ''}/api/products/${slug}`, { cache: 'no-store' });
+  const base = (process.env.NEXT_PUBLIC_BASE_URL && process.env.NEXT_PUBLIC_BASE_URL.startsWith('http'))
+    ? process.env.NEXT_PUBLIC_BASE_URL.replace(/\/$/, '')
+    : 'http://localhost:3000';
+  const res = await fetch(`${base}/api/products/${slug}`, { cache: 'no-store' });
   const json = await res.json();
   if (!json.success) return null;
   return json.data;
@@ -21,7 +24,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Header />
+      {/* Header is global from RootLayout */}
       <main className="flex-1 bg-white">
         <div className="container mx-auto px-4 py-12">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -62,7 +65,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </div>
       </main>
-      <Footer />
+      {/* Footer is global from RootLayout */}
     </div>
   );
 }

@@ -31,6 +31,12 @@ export async function GET(request: NextRequest) {
       visibility: 'VISIBLE',
     };
 
+    // Support filtering by multiple ids for favorites page
+    const ids = searchParams.getAll('id');
+    if (ids && ids.length > 0) {
+      where.id = { in: ids };
+    }
+
     if (category) {
       where.categoryObj = {
         slug: category,
