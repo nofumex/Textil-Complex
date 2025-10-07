@@ -94,37 +94,22 @@ export const Footer: React.FC = () => {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Контакты</h4>
             <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <Phone className="h-5 w-5 text-primary-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-white font-medium">+7 (495) 123-45-67</p>
-                  <p className="text-gray-400 text-sm">Основной номер</p>
-                </div>
+              <div className="text-white font-medium">ул. Маерчака, 49Г (склад 5Б)</div>
+              <div className="text-gray-300">
+                Единый номер телефона: <span className="text-white">+7(967) 612-32-54</span>
               </div>
-              
-              <div className="flex items-start space-x-3">
-                <Mail className="h-5 w-5 text-primary-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-white">info@textil-kompleks.ru</p>
-                  <p className="text-gray-400 text-sm">Основная почта</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-3">
-                <MapPin className="h-5 w-5 text-primary-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-white">г. Москва, ул. Примерная, д. 123</p>
-                  <p className="text-gray-400 text-sm">Адрес склада</p>
-                </div>
-              </div>
-              
-              <div className="flex items-start space-x-3">
-                <Clock className="h-5 w-5 text-primary-400 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-white">Пн-Пт: 9:00-18:00</p>
-                  <p className="text-gray-400 text-sm">Время работы</p>
-                </div>
-              </div>
+              <div className="text-white">za-bol@yandex.ru</div>
+              <div className="text-gray-300">660048, г. Красноярск, ул. Маерчака, 49Г, склад № 5Б</div>
+              <div className="text-white mt-4">Отдел продаж и склад в г. Красноярске:</div>
+              <div className="text-gray-300">Отдел продаж готовых изделий</div>
+              <div className="text-white">+7 (391) 278-04-60</div>
+              <div className="text-white">+7(967) 608-04-60</div>
+              <div className="text-white">+7 (967) 612-32-54</div>
+              <div className="text-gray-300 mt-3">Отдел расчета (цех пошива)</div>
+              <div className="text-white">+7 (391) 278-04-60</div>
+              <div className="text-white">+7 (905) 976-46-25</div>
+              <div className="text-gray-300 mt-3">Отдел продаж (одежда для дома)</div>
+              <div className="text-white">+7 (923) 015-28-10</div>
             </div>
           </div>
         </div>
@@ -152,8 +137,8 @@ export const Footer: React.FC = () => {
           <h4 className="text-lg font-semibold mb-4">Наш склад на карте</h4>
           <div className="w-full h-72 rounded-lg overflow-hidden border border-gray-800">
             <iframe
-              title="Карта склада"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2244.167968695143!2d37.620393!3d55.75396!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNTXCsDQ1JzEzLjMiTiAzN8KwMzcnMTMuNCJF!5e0!3m2!1sru!2sru!4v1700000000000"
+              title="Карта склада — ул. Маерчака, 49Г, склад № 5Б"
+              src={"https://www.google.com/maps?q=" + encodeURIComponent("Красноярск, ул. Маерчака, 49Г, склад № 5Б") + "&output=embed"}
               width="100%"
               height="100%"
               style={{ border: 0 }}

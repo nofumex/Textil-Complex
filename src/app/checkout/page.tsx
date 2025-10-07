@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/toast';
 import Link from 'next/link';
+import { useAuthStore } from '@/store/auth';
 
 export default function CheckoutPage() {
   const { items, clearCart, getTotalPrice } = useCartStore();
   const { success, error } = useToast();
   const [loading, setLoading] = useState(false);
+  const { isAuthenticated } = useAuthStore();
 
   const [form, setForm] = useState<any>({
     firstName: '',
@@ -24,6 +26,10 @@ export default function CheckoutPage() {
 
   const handleSubmit = async () => {
     try {
+      if (!isAuthenticated) {
+        error('Требуется аккаунт', 'Создайте аккаунт или войдите перед оформлением');
+        return;
+      }
       if (items.length === 0) {
         error('Корзина пуста', 'Добавьте товары для оформления');
         return;
@@ -67,6 +73,15 @@ export default function CheckoutPage() {
       <h1 className="text-2xl font-bold mb-6">Оформление заказа</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
+          {!isAuthenticated && (
+            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg p-4">
+              <p className="text-sm">
+                Для оформления заказа требуется аккаунт.{' '}
+                <Link href="/register" className="underline font-medium">Создайте аккаунт</Link>{' '}или{' '}
+                <Link href="/login" className="underline font-medium">войдите</Link>.
+              </p>
+            </div>
+          )}
           <div className="bg-white rounded-lg shadow-sm border p-6 space-y-4">
             <h2 className="text-lg font-semibold">Контактные данные</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

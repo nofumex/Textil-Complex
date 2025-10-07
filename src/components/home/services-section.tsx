@@ -107,12 +107,19 @@ export const ServicesSection: React.FC = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="secondary" className="text-primary-600">
+            <Button id="cta-consult" size="lg" variant="secondary" className="text-primary-600">
               Получить консультацию
             </Button>
-            <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary-600">
-              Скачать каталог
-            </Button>
+            <a
+              href="https://drive.google.com/drive/folders/1xkSlPnJg_3nHcGZzTG8-HFveKZAxXdQi?usp=drive_link"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex"
+            >
+              <Button size="lg" variant="outline" className="bg-transparent border-white text-white hover:bg-white hover:text-primary-600">
+                Скачать каталог
+              </Button>
+            </a>
           </div>
         </div>
 

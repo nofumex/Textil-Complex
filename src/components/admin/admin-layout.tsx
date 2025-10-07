@@ -66,6 +66,28 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           }
         }
 
+        // If unauthorized, try to refresh token and retry once
+        if (res.status === 401) {
+          try {
+            const refreshRes = await fetch('/api/auth/refresh', {
+              method: 'POST',
+              credentials: 'include',
+            });
+            if (refreshRes.ok) {
+              const meRetry = await fetch('/api/auth/me', { credentials: 'include' });
+              if (meRetry.ok) {
+                const json = await meRetry.json();
+                const fetchedUser = json?.data?.user;
+                if (fetchedUser && (fetchedUser.role === 'ADMIN' || fetchedUser.role === 'MANAGER')) {
+                  setUser(fetchedUser);
+                  if (isMounted) setCheckingAuth(false);
+                  return;
+                }
+              }
+            }
+          } catch {}
+        }
+
         // Not authorized
         if (isMounted) {
           setCheckingAuth(false);
@@ -121,6 +143,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       href: '/admin/customers',
       icon: Users,
       current: pathname.startsWith('/admin/customers'),
+    },
+    {
+      name: 'Заявки',
+      href: '/admin/leads',
+      icon: Users,
+      current: pathname.startsWith('/admin/leads'),
     },
     {
       name: 'Аналитика',

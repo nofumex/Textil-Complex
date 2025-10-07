@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRole } from '@/lib/auth';
 import { exportProductsToCSV } from '@/lib/csv-import';
+import { exportProductsToWXR } from '@/lib/wp-export';
 import { productFiltersSchema } from '@/lib/validations';
 
 export async function GET(request: NextRequest) {
@@ -42,13 +43,24 @@ export async function GET(request: NextRequest) {
       if (params.dateTo) filters.createdAt.lte = new Date(params.dateTo);
     }
 
-    // Export products to CSV
-    const csvContent = await exportProductsToCSV(filters);
-
-    // Generate filename with timestamp
+    const { searchParams } = new URL(request.url);
+    const format = (searchParams.get('format') || 'csv').toLowerCase();
     const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `products_export_${timestamp}.csv`;
 
+    if (format === 'xml') {
+      const xml = await exportProductsToWXR(filters);
+      const filename = `products_export_${timestamp}.xml`;
+      return new NextResponse(xml, {
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Cache-Control': 'no-cache',
+        },
+      });
+    }
+
+    const csvContent = await exportProductsToCSV(filters);
+    const filename = `products_export_${timestamp}.csv`;
     return new NextResponse(csvContent, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
@@ -57,9 +69,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Export error:', error);
-    
+    if (error?.statusCode === 401 || error?.statusCode === 403) {
+      return NextResponse.json({ success: false, error: error.message || 'Недостаточно прав' }, { status: error.statusCode });
+    }
     return NextResponse.json(
       { success: false, error: 'Ошибка при экспорте данных' },
       { status: 500 }
@@ -75,13 +89,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { productIds, format = 'csv' } = body;
 
-    if (format !== 'csv') {
-      return NextResponse.json(
-        { success: false, error: 'Поддерживается только формат CSV' },
-        { status: 400 }
-      );
-    }
-
     // Build filters for selected products
     const filters: any = {};
     
@@ -91,13 +98,21 @@ export async function POST(request: NextRequest) {
       };
     }
 
-    // Export selected products
-    const csvContent = await exportProductsToCSV(filters);
-
-    // Generate filename
     const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `selected_products_${timestamp}.csv`;
+    if (format === 'xml') {
+      const xml = await exportProductsToWXR(filters);
+      const filename = `selected_products_${timestamp}.xml`;
+      return new NextResponse(xml, {
+        headers: {
+          'Content-Type': 'application/xml; charset=utf-8',
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Cache-Control': 'no-cache',
+        },
+      });
+    }
 
+    const csvContent = await exportProductsToCSV(filters);
+    const filename = `selected_products_${timestamp}.csv`;
     return new NextResponse(csvContent, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
@@ -106,9 +121,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Export selected error:', error);
-    
+    if (error?.statusCode === 401 || error?.statusCode === 403) {
+      return NextResponse.json({ success: false, error: error.message || 'Недостаточно прав' }, { status: error.statusCode });
+    }
     return NextResponse.json(
       { success: false, error: 'Ошибка при экспорте выбранных товаров' },
       { status: 500 }

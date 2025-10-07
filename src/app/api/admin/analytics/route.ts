@@ -255,9 +255,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Get analytics error:', error);
-    
+    if (error?.statusCode === 401 || error?.statusCode === 403) {
+      return NextResponse.json({ success: false, error: error.message || 'Недостаточно прав' }, { status: error.statusCode });
+    }
     return NextResponse.json(
       { success: false, error: 'Ошибка получения аналитики' },
       { status: 500 }

@@ -19,89 +19,11 @@ import { Button } from '@/components/ui/button';
 import { formatPrice, formatDate } from '@/lib/utils';
 
 export const AdminDashboard: React.FC = () => {
-  // Mock data - в реальном приложении будет загружаться из API
-  const stats = {
-    totalRevenue: 1248650,
-    totalOrders: 156,
-    totalProducts: 342,
-    totalCustomers: 89,
-    revenueChange: 12.5,
-    ordersChange: -2.3,
-    productsChange: 5.2,
-    customersChange: 8.1,
-  };
-
-  const recentOrders = [
-    {
-      id: '1',
-      orderNumber: 'TK-123456-ABC',
-      customer: 'Иван Петров',
-      total: 4500,
-      status: 'NEW',
-      createdAt: new Date(),
-    },
-    {
-      id: '2',
-      orderNumber: 'TK-123455-DEF',
-      customer: 'Мария Сидорова',
-      total: 2800,
-      status: 'PROCESSING',
-      createdAt: new Date(Date.now() - 3600000),
-    },
-    {
-      id: '3',
-      orderNumber: 'TK-123454-GHI',
-      customer: 'Алексей Кузнецов',
-      total: 6200,
-      status: 'SHIPPED',
-      createdAt: new Date(Date.now() - 7200000),
-    },
-  ];
-
-  const topProducts = [
-    {
-      id: '1',
-      title: 'Комплект "Классик" 1.5-спальный',
-      sales: 45,
-      revenue: 112500,
-      stock: 12,
-    },
-    {
-      id: '2',
-      title: 'Подушка ортопедическая "Комфорт"',
-      sales: 38,
-      revenue: 45600,
-      stock: 8,
-    },
-    {
-      id: '3',
-      title: 'Одеяло пуховое "Зимнее"',
-      sales: 23,
-      revenue: 126500,
-      stock: 3,
-    },
-  ];
-
-  const lowStockProducts = [
-    {
-      id: '1',
-      title: 'Одеяло пуховое "Зимнее"',
-      stock: 3,
-      minStock: 5,
-    },
-    {
-      id: '2',
-      title: 'Наматрасник водонепроницаемый',
-      stock: 2,
-      minStock: 10,
-    },
-    {
-      id: '3',
-      title: 'Комплект "Люкс" 2-спальный',
-      stock: 1,
-      minStock: 5,
-    },
-  ];
+  // Убраны мок‑данные. Блоки ниже отображают только структуру интерфейса.
+  const stats = { totalRevenue: 0, totalOrders: 0, totalProducts: 0, totalCustomers: 0, revenueChange: 0, ordersChange: 0, productsChange: 0, customersChange: 0 };
+  const recentOrders: any[] = [];
+  const topProducts: any[] = [];
+  const lowStockProducts: any[] = [];
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -137,13 +59,13 @@ export const AdminDashboard: React.FC = () => {
         </div>
         <div className="flex items-center space-x-3">
           <Button variant="outline" asChild>
-            <Link href="/admin/products/create">
+            <Link href="/admin/products/create" className="inline-flex items-center">
               <Plus className="h-4 w-4 mr-2" />
               Добавить товар
             </Link>
           </Button>
           <Button asChild>
-            <Link href="/admin/orders">
+            <Link href="/admin/orders" className="inline-flex items-center">
               <Eye className="h-4 w-4 mr-2" />
               Все заказы
             </Link>
@@ -350,30 +272,30 @@ export const AdminDashboard: React.FC = () => {
       {/* Quick actions */}
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Быстрые действия</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Button variant="outline" asChild>
-            <Link href="/admin/products/create" className="flex flex-col items-center space-y-2 p-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 items-stretch">
+          <Button variant="outline" className="h-full" asChild>
+            <Link href="/admin/products/create" className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center break-words">
               <Plus className="h-6 w-6" />
               <span>Добавить товар</span>
             </Link>
           </Button>
           
-          <Button variant="outline" asChild>
-            <Link href="/admin/products/import" className="flex flex-col items-center space-y-2 p-4">
+          <Button variant="outline" className="h-full" asChild>
+            <Link href="/admin/products/import" className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center break-words">
               <Package className="h-6 w-6" />
               <span>Импорт товаров</span>
             </Link>
           </Button>
           
-          <Button variant="outline" asChild>
-            <Link href="/admin/customers" className="flex flex-col items-center space-y-2 p-4">
+          <Button variant="outline" className="h-full" asChild>
+            <Link href="/admin/customers" className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center break-words">
               <Users className="h-6 w-6" />
               <span>Управление клиентами</span>
             </Link>
           </Button>
           
-          <Button variant="outline" asChild>
-            <Link href="/admin/analytics" className="flex flex-col items-center space-y-2 p-4">
+          <Button variant="outline" className="h-full" asChild>
+            <Link href="/admin/analytics" className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center break-words">
               <TrendingUp className="h-6 w-6" />
               <span>Аналитика</span>
             </Link>

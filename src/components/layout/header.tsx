@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Menu, X, ShoppingCart, User, Search, Phone, Clock } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, Search, Phone, Clock, LayoutDashboard, MapPin, Mail } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { useCartStore } from '@/store/cart';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ export const Header: React.FC = () => {
     { name: 'Каталог', href: '/catalog' },
     { name: 'О компании', href: '/about' },
     { name: 'Доставка', href: '/delivery' },
+    { name: 'Отзывы', href: '/reviews' },
     { name: 'Контакты', href: '/contacts' },
   ];
 
@@ -38,21 +39,27 @@ export const Header: React.FC = () => {
       <div className="bg-gray-50 py-2">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center text-sm text-gray-600">
-            <div className="flex items-center space-x-6">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <div className="flex items-center space-x-1">
+                <MapPin className="h-4 w-4" />
+                <span>Маерчака, 49г склад №4</span>
+              </div>
               <div className="flex items-center space-x-1">
                 <Phone className="h-4 w-4" />
-                <span>+7 (495) 123-45-67</span>
+                <span>+7 (391) 278‒46‒72</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Mail className="h-4 w-4" />
+                <span>za-bol@yandex.ru</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Clock className="h-4 w-4" />
-                <span>Пн-Пт: 9:00-18:00</span>
+                <span>ПН-ПТ 09:00–18:00 СБ 10:00-14:00</span>
               </div>
             </div>
             <div className="hidden md:flex items-center space-x-4">
               {isAuthenticated ? (
-                <Link href="/profile" className="hover:text-primary-600">
-                  Личный кабинет
-                </Link>
+                null
               ) : (
                 <>
                   <Link href="/login" className="hover:text-primary-600">
@@ -120,12 +127,21 @@ export const Header: React.FC = () => {
             {/* User menu */}
             <div className="hidden md:flex items-center space-x-2">
               {isAuthenticated ? (
-                <Link href="/profile">
-                  <Button variant="ghost" size="sm">
-                    <User className="h-4 w-4 mr-2" />
-                    {user?.firstName}
-                  </Button>
-                </Link>
+                user?.role === 'ADMIN' ? (
+                  <Link href="/admin">
+                    <Button variant="secondary" size="sm">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Админ‑панель
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/profile">
+                    <Button variant="ghost" size="sm">
+                      <User className="h-4 w-4 mr-2" />
+                      {user?.firstName}
+                    </Button>
+                  </Link>
+                )
               ) : (
                 <Link href="/login">
                   <Button size="sm">
@@ -201,12 +217,14 @@ export const Header: React.FC = () => {
               ))}
             </nav>
 
-            {/* Mobile auth */}
+            {/* Mobile auth/admin */}
             <div className="pt-4 border-t space-y-2">
               {isAuthenticated ? (
-                <Link href="/profile" className="block py-2 text-gray-700">
-                  Личный кабинет
-                </Link>
+                user?.role === 'ADMIN' ? (
+                  <Link href="/admin" className="block py-2 text-primary-700">
+                    Админ‑панель
+                  </Link>
+                ) : null
               ) : (
                 <>
                   <Link href="/login" className="block py-2 text-gray-700">

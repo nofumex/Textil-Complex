@@ -4,12 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, ArrowLeft, FileDown, CheckCircle2 } from 'lucide-react';
+import { Upload, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/components/ui/toast';
 
 export default function ImportProductsPage() {
   const { success, error } = useToast();
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [validateOnly, setValidateOnly] = useState(false);
   const [updateExisting, setUpdateExisting] = useState(true);
   const [skipInvalid, setSkipInvalid] = useState(true);
@@ -17,15 +17,17 @@ export default function ImportProductsPage() {
   const [result, setResult] = useState<any>(null);
 
   const handleImport = async () => {
-    if (!file) {
-      error('Ошибка', 'Выберите CSV файл');
+    if (!files || files.length === 0) {
+      error('Ошибка', 'Выберите хотя бы один файл (CSV или XML)');
       return;
     }
     setLoading(true);
     setResult(null);
     try {
       const fd = new FormData();
-      fd.append('file', file);
+      for (const f of files) {
+        fd.append('file', f);
+      }
       fd.append('validateOnly', String(validateOnly));
       fd.append('updateExisting', String(updateExisting));
       fd.append('skipInvalid', String(skipInvalid));
@@ -60,21 +62,14 @@ export default function ImportProductsPage() {
             <p className="text-gray-600">Загрузите CSV для массового добавления/обновления</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" asChild>
-            <a href="/api/admin/import?action=sample">
-              <FileDown className="h-4 w-4 mr-2" />
-              Скачать пример CSV
-            </a>
-          </Button>
-        </div>
+        <div className="flex items-center gap-3" />
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border p-6 space-y-6">
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-700">CSV файл</label>
-          <Input type="file" accept=".csv" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-          <p className="text-xs text-gray-500">Поддерживается формат CSV, кодировка UTF-8. Макс 10MB.</p>
+          <Input type="file" accept=".csv,.xml" multiple onChange={(e) => setFiles(e.target.files ? Array.from(e.target.files) : [])} />
+          <p className="text-xs text-gray-500">Можно выбрать несколько файлов (например, товары.xml и медиа.xml). CSV или WordPress XML (WXR). Макс 20MB суммарно.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

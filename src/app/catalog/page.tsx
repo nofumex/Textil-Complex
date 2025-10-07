@@ -35,7 +35,7 @@ export default function CatalogPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: products, pagination, loading: productsLoading } = useProductsList({ ...filters, search: searchQuery, page, limit });
-  const { data: categories } = useCategories();
+  const { data: categories } = useCategories(true);
 
   useEffect(() => {
     // Apply URL params on load
@@ -334,7 +334,7 @@ export default function CatalogPage() {
                   >
                     <div className="aspect-square bg-gray-100 rounded-lg mb-4 overflow-hidden group-hover:shadow-lg transition-shadow">
                       <img
-                        src={category.image || '/category-placeholder.jpg'}
+                        src={(category.image && category.image.length > 0) ? category.image : (category.products?.[0]?.images?.[0] || '/category-placeholder.jpg')}
                         alt={category.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                       />

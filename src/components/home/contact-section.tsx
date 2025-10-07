@@ -72,8 +72,7 @@ export const ContactSection: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Телефон</h4>
-                    <p className="text-gray-600">+7 (495) 123-45-67</p>
-                    <p className="text-gray-600">+7 (495) 123-45-68</p>
+                    <p className="text-gray-600">+7(967) 612-32-54</p>
                   </div>
                 </div>
 
@@ -83,8 +82,7 @@ export const ContactSection: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Email</h4>
-                    <p className="text-gray-600">info@textil-kompleks.ru</p>
-                    <p className="text-gray-600">sales@textil-kompleks.ru</p>
+                    <p className="text-gray-600">za-bol@yandex.ru</p>
                   </div>
                 </div>
 
@@ -94,10 +92,7 @@ export const ContactSection: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Адрес</h4>
-                    <p className="text-gray-600">
-                      г. Москва, ул. Примерная, д. 123,<br />
-                      строение 1, офис 45
-                    </p>
+                    <p className="text-gray-600">ул. Маерчака, 49Г, склад № 5Б</p>
                   </div>
                 </div>
 
@@ -107,11 +102,7 @@ export const ContactSection: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Режим работы</h4>
-                    <p className="text-gray-600">
-                      Пн-Пт: 9:00 - 18:00<br />
-                      Сб: 10:00 - 15:00<br />
-                      Вс: выходной
-                    </p>
+                    <p className="text-gray-600">ПН-ПТ 09:00–18:00 СБ 10:00-14:00</p>
                   </div>
                 </div>
               </div>
@@ -220,32 +211,26 @@ export const ContactSection: React.FC = () => {
         </div>
 
         {/* Quick contact options */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center p-6 bg-blue-50 rounded-xl">
             <Phone className="h-8 w-8 text-blue-600 mx-auto mb-3" />
             <h4 className="font-semibold text-gray-900 mb-2">Позвонить</h4>
             <p className="text-gray-600 mb-3">Получите консультацию прямо сейчас</p>
-            <Button variant="outline" size="sm">
-              +7 (495) 123-45-67
-            </Button>
+            <Button variant="outline" size="sm">+7(967) 612-32-54</Button>
           </div>
 
-          <div className="text-center p-6 bg-green-50 rounded-xl">
+            <div className="text-center p-6 bg-green-50 rounded-xl">
             <Mail className="h-8 w-8 text-green-600 mx-auto mb-3" />
             <h4 className="font-semibold text-gray-900 mb-2">Написать</h4>
             <p className="text-gray-600 mb-3">Отправьте нам письмо</p>
-            <Button variant="outline" size="sm">
-              info@textil-kompleks.ru
-            </Button>
+            <Button variant="outline" size="sm">za-bol@yandex.ru</Button>
           </div>
 
-          <div className="text-center p-6 bg-purple-50 rounded-xl">
+            <div className="text-center p-6 bg-purple-50 rounded-xl">
             <MapPin className="h-8 w-8 text-purple-600 mx-auto mb-3" />
             <h4 className="font-semibold text-gray-900 mb-2">Приехать</h4>
             <p className="text-gray-600 mb-3">Посетите наш офис</p>
-            <Button variant="outline" size="sm">
-              Построить маршрут
-            </Button>
+            <Button variant="outline" size="sm">ул. Маерчака, 49Г, склад № 5Б</Button>
           </div>
         </div>
       </div>

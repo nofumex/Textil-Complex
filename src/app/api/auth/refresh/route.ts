@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { refreshAccessToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
+import { refreshAccessToken } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,46 +9,32 @@ export async function POST(request: NextRequest) {
 
     if (!refreshToken) {
       return NextResponse.json(
-        { success: false, error: 'Refresh token не найден' },
+        { success: false, error: 'Отсутствует refresh токен' },
         { status: 401 }
       );
     }
 
-    // Refresh the access token
     const { accessToken, refreshToken: newRefreshToken } = await refreshAccessToken(refreshToken);
 
-    // Set new cookies
+    // Update cookies
     cookieStore.set('access_token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 15, // 15 minutes
+      maxAge: 60 * 15,
     });
 
     cookieStore.set('refresh_token', newRefreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: 60 * 60 * 24 * 7,
     });
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        accessToken,
-      }
-    });
-
+    return NextResponse.json({ success: true, data: { accessToken } });
   } catch (error) {
-    console.error('Refresh token error:', error);
-    
-    // Clear invalid cookies
-    const cookieStore = cookies();
-    cookieStore.delete('access_token');
-    cookieStore.delete('refresh_token');
-
     return NextResponse.json(
-      { success: false, error: 'Недействительный refresh token' },
+      { success: false, error: 'Не удалось обновить токен' },
       { status: 401 }
     );
   }

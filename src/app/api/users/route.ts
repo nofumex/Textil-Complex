@@ -101,10 +101,12 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Get users error:', error);
-    
+    // Map auth errors to appropriate status
+    const status = (error as any)?.statusCode === 403 ? 403 : (error as any)?.statusCode === 401 ? 401 : 500;
+    const message = status === 401 ? 'Неавторизован' : status === 403 ? 'Недостаточно прав' : 'Ошибка получения пользователей';
     return NextResponse.json(
-      { success: false, error: 'Ошибка получения пользователей' },
-      { status: 500 }
+      { success: false, error: message },
+      { status }
     );
   }
 }

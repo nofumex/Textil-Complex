@@ -100,7 +100,7 @@ const ToastContainer: React.FC<{
   }
 
   return createPortal(
-    <div className="fixed bottom-4 right-4 z-50 space-y-2">
+    <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm sm:max-w-md md:max-w-md flex flex-col gap-2 items-end">
       {toasts.map(toast => (
         <ToastComponent
           key={toast.id}
@@ -143,7 +143,7 @@ const ToastComponent: React.FC<{
   return (
     <div
       className={cn(
-        'max-w-sm w-full shadow-lg rounded-lg pointer-events-auto border animate-slide-up',
+        'w-full shadow-lg rounded-lg pointer-events-auto border animate-slide-up',
         colors[toast.type]
       )}
     >

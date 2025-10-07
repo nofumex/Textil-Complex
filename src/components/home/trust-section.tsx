@@ -103,24 +103,7 @@ export const TrustSection: React.FC = () => {
           </div>
         </div>
 
-        {/* Testimonial */}
-        <div className="mt-16 text-center">
-          <blockquote className="text-xl md:text-2xl text-gray-700 italic max-w-4xl mx-auto mb-8">
-            "Работаем с Текстиль Комплекс уже 5 лет. Всегда качественная продукция, 
-            соблюдение сроков и отличный сервис. Рекомендуем как надёжного поставщика!"
-          </blockquote>
-          <div className="flex items-center justify-center space-x-4">
-            <img
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=60&h=60&fit=crop&crop=face"
-              alt="Отзыв клиента"
-              className="w-12 h-12 rounded-full"
-            />
-            <div className="text-left">
-              <div className="font-semibold text-gray-900">Александр Петров</div>
-              <div className="text-gray-600">Директор ООО "Гостиничный комплекс"</div>
-            </div>
-          </div>
-        </div>
+        {/* Testimonial removed by request */}
       </div>
     </section>
   );

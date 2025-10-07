@@ -38,46 +38,7 @@ export default function AdminProductsPage() {
   const { success, error } = useToast();
   const { data: categories } = useCategories();
 
-  // Mock data (не используется после загрузки из API)
-  const mockProducts = [
-    {
-      id: '1',
-      title: 'Комплект постельного белья "Классик"',
-      sku: 'BED001',
-      category: 'Постельное белье',
-      price: 2500,
-      oldPrice: 3000,
-      stock: 15,
-      status: 'VISIBLE',
-      isActive: true,
-      createdAt: new Date(),
-      images: ['https://example.com/image1.jpg'],
-    },
-    {
-      id: '2',
-      title: 'Подушка ортопедическая "Комфорт"',
-      sku: 'PIL001',
-      category: 'Подушки',
-      price: 1200,
-      stock: 8,
-      status: 'VISIBLE',
-      isActive: true,
-      createdAt: new Date(),
-      images: ['https://example.com/image2.jpg'],
-    },
-    {
-      id: '3',
-      title: 'Одеяло пуховое "Зимнее"',
-      sku: 'DUV001',
-      category: 'Одеяла',
-      price: 5500,
-      stock: 3,
-      status: 'VISIBLE',
-      isActive: true,
-      createdAt: new Date(),
-      images: ['https://example.com/image3.jpg'],
-    },
-  ];
+  // Удалены демонстрационные мок-данные
 
   const handleSelectProduct = (productId: string) => {
     setSelectedProducts(prev => 

@@ -55,7 +55,6 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user }) => {
   const sections = [
     { id: 'password', name: 'Пароль', icon: Lock },
     { id: 'notifications', name: 'Уведомления', icon: Bell },
-    { id: 'security', name: 'Безопасность', icon: Shield },
     { id: 'danger', name: 'Удаление аккаунта', icon: Trash2 },
   ];
 
@@ -195,49 +194,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({ user }) => {
             </div>
           )}
 
-          {activeSection === 'security' && (
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Безопасность
-                </h3>
-                <p className="text-gray-600 text-sm mb-6">
-                  Настройки безопасности вашего аккаунта
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Активные сессии</h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Управляйте устройствами, с которых выполнен вход в аккаунт
-                  </p>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-green-900">Текущая сессия</p>
-                        <p className="text-sm text-green-700">Windows • Chrome • Москва</p>
-                      </div>
-                      <span className="text-xs text-green-600 font-medium">АКТИВНА</span>
-                    </div>
-                  </div>
-                  
-                  <Button variant="outline" className="mt-4">
-                    Завершить все другие сессии
-                  </Button>
-                </div>
-
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h4 className="font-medium text-gray-900 mb-2">Двухфакторная аутентификация</h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Дополнительная защита аккаунта с помощью SMS-кодов
-                  </p>
-                  <Button variant="outline">Настроить 2FA</Button>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Security section removed by request */}
 
           {activeSection === 'danger' && (
             <div className="space-y-6">

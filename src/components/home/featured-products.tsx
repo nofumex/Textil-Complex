@@ -1,68 +1,30 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, ShoppingCart, Eye, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatPrice, getStockStatus } from '@/lib/utils';
 
 export const FeaturedProducts: React.FC = () => {
-  // Mock data - в реальном приложении будет загружаться из API
-  const featuredProducts = [
-    {
-      id: '1',
-      title: 'Комплект постельного белья "Классик"',
-      slug: 'komplekt-klassik',
-      price: 2500,
-      oldPrice: 3000,
-      images: ['https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400&h=400&fit=crop'],
-      category: 'MIDDLE',
-      stock: 15,
-      rating: 4.8,
-      reviewsCount: 24,
-      material: '100% хлопок',
-      inStock: true,
-    },
-    {
-      id: '2',
-      title: 'Подушка ортопедическая "Комфорт"',
-      slug: 'podushka-komfort',
-      price: 1200,
-      images: ['https://images.unsplash.com/photo-1584100936595-c0654b55a2e2?w=400&h=400&fit=crop'],
-      category: 'ECONOMY',
-      stock: 8,
-      rating: 4.6,
-      reviewsCount: 18,
-      material: 'Пенополиуретан',
-      inStock: true,
-    },
-    {
-      id: '3',
-      title: 'Одеяло пуховое "Премиум"',
-      slug: 'odeyalo-premium',
-      price: 5500,
-      images: ['https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=400&fit=crop'],
-      category: 'LUXURY',
-      stock: 3,
-      rating: 4.9,
-      reviewsCount: 12,
-      material: 'Натуральный пух',
-      inStock: true,
-    },
-    {
-      id: '4',
-      title: 'Наматрасник водонепроницаемый',
-      slug: 'namatrasnik-waterproof',
-      price: 1800,
-      images: ['https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=400&fit=crop'],
-      category: 'MIDDLE',
-      stock: 22,
-      rating: 4.7,
-      reviewsCount: 31,
-      material: 'Полиэстер + TPU',
-      inStock: true,
-    },
-  ];
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/products?limit=8&sortBy=createdAt&sortOrder=desc');
+        const json = await res.json();
+        if (json?.success) {
+          setFeaturedProducts(json.data);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
 
   const getCategoryLabel = (category: string) => {
     const labels = {
@@ -95,7 +57,19 @@ export const FeaturedProducts: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {featuredProducts.map((product) => {
+          {(loading ? Array.from({ length: 4 }).map((_, i) => ({ id: `s-${i}`, loading: true })) : featuredProducts).map((product: any) => {
+            if (product.loading) {
+              return (
+                <div key={product.id} className="bg-white rounded-xl shadow-sm border overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-gray-200" />
+                  <div className="p-6 space-y-3">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-4 bg-gray-200 rounded w-1/2" />
+                    <div className="h-8 bg-gray-200 rounded w-full" />
+                  </div>
+                </div>
+              );
+            }
             const stockStatus = getStockStatus(product.stock);
             
             return (
@@ -106,7 +80,7 @@ export const FeaturedProducts: React.FC = () => {
                 {/* Image */}
                 <div className="relative aspect-square overflow-hidden">
                   <img
-                    src={product.images[0]}
+                    src={product.images?.[0] || '/placeholder.png'}
                     alt={product.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
@@ -143,21 +117,6 @@ export const FeaturedProducts: React.FC = () => {
 
                 {/* Content */}
                 <div className="p-6">
-                  {/* Rating */}
-                  <div className="flex items-center space-x-2 mb-3">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                        />
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-600">
-                      {product.rating} ({product.reviewsCount})
-                    </span>
-                  </div>
-
                   {/* Title */}
                   <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
                     {product.title}
@@ -171,11 +130,11 @@ export const FeaturedProducts: React.FC = () => {
                   {/* Price */}
                   <div className="flex items-center space-x-2 mb-4">
                     <span className="text-xl font-bold text-gray-900">
-                      {formatPrice(product.price)}
+                      {formatPrice(Number(product.price))}
                     </span>
                     {product.oldPrice && (
                       <span className="text-sm text-gray-500 line-through">
-                        {formatPrice(product.oldPrice)}
+                        {formatPrice(Number(product.oldPrice))}
                       </span>
                     )}
                   </div>
