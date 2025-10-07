@@ -6,22 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
-  Settings, 
   Save, 
   RefreshCw,
-  Globe,
-  Mail,
   Phone,
-  MapPin,
-  Clock,
-  Truck,
-  CreditCard,
-  Image,
   Link
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<any>({});
+  const [settings, setSettings] = useState<any>({
+    contactEmail: '',
+    contactPhone: '',
+    address: '',
+    socialLinks: [] as { label: string; url: string }[],
+    extraContacts: [] as { title: string; values: string[] }[],
+  });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -35,7 +33,81 @@ export default function SettingsPage() {
   }, [settingsData]);
 
   const handleInputChange = (key: string, value: any) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
+    setSettings((prev: any) => ({ ...prev, [key]: value }));
+  };
+
+  // Dynamic helpers
+  const updateSocial = (index: number, key: 'label' | 'url', value: string) => {
+    setSettings((prev: any) => {
+      const next = [...(prev.socialLinks || [])];
+      next[index] = { ...(next[index] || { label: '', url: '' }), [key]: value };
+      return { ...prev, socialLinks: next };
+    });
+  };
+
+  const addSocial = () => {
+    setSettings((prev: any) => ({
+      ...prev,
+      socialLinks: [...(prev.socialLinks || []), { label: '', url: '' }],
+    }));
+  };
+
+  const removeSocial = (index: number) => {
+    setSettings((prev: any) => ({
+      ...prev,
+      socialLinks: (prev.socialLinks || []).filter((_: any, i: number) => i !== index),
+    }));
+  };
+
+  const updateExtraTitle = (index: number, value: string) => {
+    setSettings((prev: any) => {
+      const next = [...(prev.extraContacts || [])];
+      next[index] = { ...(next[index] || { title: '', values: [] }), title: value };
+      return { ...prev, extraContacts: next };
+    });
+  };
+
+  const addExtraGroup = () => {
+    setSettings((prev: any) => ({
+      ...prev,
+      extraContacts: [...(prev.extraContacts || []), { title: '', values: [''] }],
+    }));
+  };
+
+  const removeExtraGroup = (index: number) => {
+    setSettings((prev: any) => ({
+      ...prev,
+      extraContacts: (prev.extraContacts || []).filter((_: any, i: number) => i !== index),
+    }));
+  };
+
+  const updateExtraValue = (groupIndex: number, valueIndex: number, value: string) => {
+    setSettings((prev: any) => {
+      const groups = [...(prev.extraContacts || [])];
+      const group = groups[groupIndex] || { title: '', values: [] };
+      const values = [...(group.values || [])];
+      values[valueIndex] = value;
+      groups[groupIndex] = { ...group, values };
+      return { ...prev, extraContacts: groups };
+    });
+  };
+
+  const addExtraValue = (groupIndex: number) => {
+    setSettings((prev: any) => {
+      const groups = [...(prev.extraContacts || [])];
+      const group = groups[groupIndex] || { title: '', values: [] };
+      groups[groupIndex] = { ...group, values: [...(group.values || []), ''] };
+      return { ...prev, extraContacts: groups };
+    });
+  };
+
+  const removeExtraValue = (groupIndex: number, valueIndex: number) => {
+    setSettings((prev: any) => {
+      const groups = [...(prev.extraContacts || [])];
+      const group = groups[groupIndex] || { title: '', values: [] };
+      groups[groupIndex] = { ...group, values: (group.values || []).filter((_: any, i: number) => i !== valueIndex) };
+      return { ...prev, extraContacts: groups };
+    });
   };
 
   const handleSave = async () => {
@@ -122,39 +194,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* General Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Globe className="h-5 w-5 mr-2" />
-            Общие настройки
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Название сайта
-              </label>
-              <Input
-                value={settings.site_name || ''}
-                onChange={(e) => handleInputChange('site_name', e.target.value)}
-                placeholder="Название сайта"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Описание сайта
-              </label>
-              <Input
-                value={settings.site_description || ''}
-                onChange={(e) => handleInputChange('site_description', e.target.value)}
-                placeholder="Описание сайта"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Общие настройки удалены по требованию */}
 
       {/* Contact Settings */}
       <Card>
@@ -172,8 +212,8 @@ export default function SettingsPage() {
               </label>
               <Input
                 type="email"
-                value={settings.contact_email || ''}
-                onChange={(e) => handleInputChange('contact_email', e.target.value)}
+                value={settings.contactEmail || ''}
+                onChange={(e) => handleInputChange('contactEmail', e.target.value)}
                 placeholder="info@example.com"
               />
             </div>
@@ -182,8 +222,8 @@ export default function SettingsPage() {
                 Телефон
               </label>
               <Input
-                value={settings.contact_phone || ''}
-                onChange={(e) => handleInputChange('contact_phone', e.target.value)}
+                value={settings.contactPhone || ''}
+                onChange={(e) => handleInputChange('contactPhone', e.target.value)}
                 placeholder="+7 (495) 123-45-67"
               />
             </div>
@@ -198,123 +238,11 @@ export default function SettingsPage() {
               placeholder="г. Москва, ул. Примерная, д. 123"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Режим работы
-            </label>
-            <Input
-              value={settings.working_hours || ''}
-              onChange={(e) => handleInputChange('working_hours', e.target.value)}
-              placeholder="Пн-Пт: 9:00-18:00, Сб: 10:00-15:00"
-            />
-          </div>
+          {/* Режим работы удалён по требованию */}
         </CardContent>
       </Card>
 
-      {/* Delivery Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Truck className="h-5 w-5 mr-2" />
-            Настройки доставки
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Бесплатная доставка от (руб.)
-              </label>
-              <Input
-                type="number"
-                value={settings.free_delivery_from || ''}
-                onChange={(e) => handleInputChange('free_delivery_from', Number(e.target.value))}
-                placeholder="3000"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Стоимость доставки по умолчанию (руб.)
-              </label>
-              <Input
-                type="number"
-                value={settings.default_delivery_price || ''}
-                onChange={(e) => handleInputChange('default_delivery_price', Number(e.target.value))}
-                placeholder="500"
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Email Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Mail className="h-5 w-5 mr-2" />
-            Настройки email
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                SMTP хост
-              </label>
-              <Input
-                value={settings.smtp_host || ''}
-                onChange={(e) => handleInputChange('smtp_host', e.target.value)}
-                placeholder="smtp.gmail.com"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                SMTP порт
-              </label>
-              <Input
-                type="number"
-                value={settings.smtp_port || ''}
-                onChange={(e) => handleInputChange('smtp_port', Number(e.target.value))}
-                placeholder="587"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                SMTP пользователь
-              </label>
-              <Input
-                value={settings.smtp_user || ''}
-                onChange={(e) => handleInputChange('smtp_user', e.target.value)}
-                placeholder="your-email@gmail.com"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                SMTP пароль
-              </label>
-              <Input
-                type="password"
-                value={settings.smtp_password || ''}
-                onChange={(e) => handleInputChange('smtp_password', e.target.value)}
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email отправителя
-            </label>
-            <Input
-              type="email"
-              value={settings.from_email || ''}
-              onChange={(e) => handleInputChange('from_email', e.target.value)}
-              placeholder="noreply@example.com"
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Блоки доставки и email удалены по требованию */}
 
       {/* Social Links */}
       <Card>
@@ -325,50 +253,56 @@ export default function SettingsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                VKontakte
-              </label>
-              <Input
-                value={settings.social_vk || ''}
-                onChange={(e) => handleInputChange('social_vk', e.target.value)}
-                placeholder="https://vk.com/yourpage"
-              />
+          {(settings.socialLinks || []).map((item: any, idx: number) => (
+            <div key={idx} className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+              <div className="md:col-span-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Название сети</label>
+                <Input value={item?.label || ''} onChange={(e) => updateSocial(idx, 'label', e.target.value)} placeholder="Напр.: ВК, WB, Telegram" />
+              </div>
+              <div className="md:col-span-7">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ссылка</label>
+                <Input value={item?.url || ''} onChange={(e) => updateSocial(idx, 'url', e.target.value)} placeholder="https://vk.com/yourpage" />
+              </div>
+              <div className="md:col-span-1">
+                <Button variant="outline" onClick={() => removeSocial(idx)}>Удалить</Button>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Telegram
-              </label>
-              <Input
-                value={settings.social_telegram || ''}
-                onChange={(e) => handleInputChange('social_telegram', e.target.value)}
-                placeholder="https://t.me/yourpage"
-              />
+          ))}
+          <Button variant="outline" onClick={addSocial}>Добавить соцсеть</Button>
+        </CardContent>
+      </Card>
+
+      {/* Additional Data */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Дополнительные данные</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {(settings.extraContacts || []).map((group: any, gIdx: number) => (
+            <div key={gIdx} className="space-y-3 p-4 border border-gray-200 rounded-lg">
+              <div className="flex items-end gap-3">
+                <div className="flex-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Заголовок</label>
+                  <Input value={group?.title || ''} onChange={(e) => updateExtraTitle(gIdx, e.target.value)} placeholder="Напр.: Отдел продаж готовых изделий" />
+                </div>
+                <Button variant="outline" onClick={() => removeExtraGroup(gIdx)}>Удалить блок</Button>
+              </div>
+
+              <div className="space-y-2">
+                {(group?.values || []).map((val: string, vIdx: number) => (
+                  <div key={vIdx} className="flex items-end gap-3">
+                    <div className="flex-1">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Значение</label>
+                      <Input value={val || ''} onChange={(e) => updateExtraValue(gIdx, vIdx, e.target.value)} placeholder="+7 (___) ___-__-__" />
+                    </div>
+                    <Button variant="outline" onClick={() => removeExtraValue(gIdx, vIdx)}>Удалить</Button>
+                  </div>
+                ))}
+                <Button variant="outline" onClick={() => addExtraValue(gIdx)}>Добавить значение</Button>
+              </div>
             </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                WhatsApp
-              </label>
-              <Input
-                value={settings.social_whatsapp || ''}
-                onChange={(e) => handleInputChange('social_whatsapp', e.target.value)}
-                placeholder="+7 (495) 123-45-67"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Instagram
-              </label>
-              <Input
-                value={settings.social_instagram || ''}
-                onChange={(e) => handleInputChange('social_instagram', e.target.value)}
-                placeholder="https://instagram.com/yourpage"
-              />
-            </div>
-          </div>
+          ))}
+          <Button variant="outline" onClick={addExtraGroup}>Добавить блок</Button>
         </CardContent>
       </Card>
     </div>

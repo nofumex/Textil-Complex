@@ -12,16 +12,12 @@ import {
   Settings, 
   Upload, 
   Download,
-  Menu,
   X,
-  LogOut,
-  Bell,
-  Search
+  LogOut
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { useLogout } from '@/hooks/useApi';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/toast';
 
 interface AdminLayoutProps {
@@ -288,6 +284,14 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                 </p>
               </div>
             </div>
+        <Button
+          variant="outline"
+          size="sm"
+          asChild
+          className="w-full mb-2"
+        >
+          <Link href="/" target="_blank">Перейти на сайт</Link>
+        </Button>
             <Button
               variant="outline"
               size="sm"
@@ -303,48 +307,6 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
       {/* Main content */}
       <div className="lg:pl-64">
-        {/* Top header */}
-        <header className="bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between h-16 px-6">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-md hover:bg-gray-100"
-              >
-                <Menu className="h-5 w-5" />
-              </button>
-              
-              {/* Search */}
-              <div className="hidden md:block w-96">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    type="text"
-                    placeholder="Поиск по админ-панели..."
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {/* Notifications */}
-              <button className="p-2 rounded-md hover:bg-gray-100 relative">
-                <Bell className="h-5 w-5 text-gray-500" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              </button>
-
-              {/* Site link */}
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/" target="_blank">
-                  Перейти на сайт
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        {/* Page content */}
         <main className="p-6">
           {children}
         </main>

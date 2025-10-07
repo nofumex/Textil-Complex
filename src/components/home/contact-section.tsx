@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { usePublicSettings } from '@/hooks/useApi';
 import { Phone, Mail, MapPin, Clock, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ export const ContactSection: React.FC = () => {
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { data: publicSettings } = usePublicSettings();
   const { success, error } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -45,6 +47,15 @@ export const ContactSection: React.FC = () => {
     }
   };
 
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      success('Скопировано', text);
+    } catch (e) {
+      error('Не удалось скопировать', 'Скопируйте вручную');
+    }
+  };
+
   return (
     <section className="py-16 lg:py-24">
       <div className="container mx-auto px-4">
@@ -72,7 +83,7 @@ export const ContactSection: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Телефон</h4>
-                    <p className="text-gray-600">+7(967) 612-32-54</p>
+                    <p className="text-gray-600">{publicSettings?.contactPhone || '+7'}</p>
                   </div>
                 </div>
 
@@ -82,7 +93,7 @@ export const ContactSection: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Email</h4>
-                    <p className="text-gray-600">za-bol@yandex.ru</p>
+                    <p className="text-gray-600">{publicSettings?.contactEmail || ''}</p>
                   </div>
                 </div>
 
@@ -92,7 +103,7 @@ export const ContactSection: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-1">Адрес</h4>
-                    <p className="text-gray-600">ул. Маерчака, 49Г, склад № 5Б</p>
+                    <p className="text-gray-600">{publicSettings?.address || ''}</p>
                   </div>
                 </div>
 
@@ -202,10 +213,7 @@ export const ContactSection: React.FC = () => {
             </form>
 
             <p className="text-sm text-gray-500 mt-4">
-              Нажимая кнопку "Отправить заявку", вы соглашаетесь с{' '}
-              <a href="/privacy" className="text-primary-600 hover:underline">
-                политикой конфиденциальности
-              </a>
+              Отправляя форму, вы соглашаетесь на обработку персональных данных.
             </p>
           </div>
         </div>
@@ -216,21 +224,39 @@ export const ContactSection: React.FC = () => {
             <Phone className="h-8 w-8 text-blue-600 mx-auto mb-3" />
             <h4 className="font-semibold text-gray-900 mb-2">Позвонить</h4>
             <p className="text-gray-600 mb-3">Получите консультацию прямо сейчас</p>
-            <Button variant="outline" size="sm">+7(967) 612-32-54</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => copyToClipboard(publicSettings?.contactPhone || '')}
+            >
+              {publicSettings?.contactPhone || ''}
+            </Button>
           </div>
 
             <div className="text-center p-6 bg-green-50 rounded-xl">
             <Mail className="h-8 w-8 text-green-600 mx-auto mb-3" />
             <h4 className="font-semibold text-gray-900 mb-2">Написать</h4>
             <p className="text-gray-600 mb-3">Отправьте нам письмо</p>
-            <Button variant="outline" size="sm">za-bol@yandex.ru</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => copyToClipboard(publicSettings?.contactEmail || '')}
+            >
+              {publicSettings?.contactEmail || ''}
+            </Button>
           </div>
 
             <div className="text-center p-6 bg-purple-50 rounded-xl">
             <MapPin className="h-8 w-8 text-purple-600 mx-auto mb-3" />
             <h4 className="font-semibold text-gray-900 mb-2">Приехать</h4>
             <p className="text-gray-600 mb-3">Посетите наш офис</p>
-            <Button variant="outline" size="sm">ул. Маерчака, 49Г, склад № 5Б</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => copyToClipboard(publicSettings?.address || '')}
+            >
+              {publicSettings?.address || ''}
+            </Button>
           </div>
         </div>
       </div>

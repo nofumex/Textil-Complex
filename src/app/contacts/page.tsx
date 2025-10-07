@@ -1,8 +1,11 @@
+'use client';
 import React from 'react';
+import { usePublicSettings } from '@/hooks/useApi';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 
 export default function ContactsPage() {
+  const { data: publicSettings } = usePublicSettings();
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header is global from RootLayout */}
@@ -16,19 +19,24 @@ export default function ContactsPage() {
 
             <h2>Наши магазины</h2>
             <ul>
-              <li>WB — <a href="https://www.wildberries.ru/seller/4473987" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">Wildberries</a></li>
-              <li>ВК — <a href="https://vk.com/stiligoroda" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">vk.com/stiligoroda</a></li>
+              {(publicSettings?.socialLinks || []).map((s: any, i: number) => (
+                <li key={i}>
+                  {s.label} — <a href={(s.url || '').startsWith('http') ? s.url : `https://${s.url}`} target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">{s.url}</a>
+                </li>
+              ))}
             </ul>
 
-            <p><strong>Единый номер телефона:</strong> +7 (967) 612-32-54</p>
-            <p><strong>Единый адрес электронной почты:</strong> za-bol@yandex.ru</p>
-            <p><strong>Адрес:</strong> 660048, г. Красноярск, ул. Маерчака, 49Г, склад № 5Б</p>
+            <p><strong>Единый номер телефона:</strong> {publicSettings?.contactPhone || ''}</p>
+            <p><strong>Единый адрес электронной почты:</strong> {publicSettings?.contactEmail || ''}</p>
+            <p><strong>Адрес:</strong> {publicSettings?.address || ''}</p>
 
             <h3>Отдел продаж и склад в г. Красноярске</h3>
             <ul>
-              <li>Отдел продаж готовых изделий: +7 (391) 278-04-60, +7 (967) 608-04-60, +7 (967) 612-32-54</li>
-              <li>Отдел расчета (цех пошива): +7 (391) 278-04-60, +7 (905) 976-46-25</li>
-              <li>Отдел продаж (одежда для дома): +7 (923) 015-28-10</li>
+              {(publicSettings?.extraContacts || []).map((group: any, idx: number) => (
+                <li key={idx}>
+                  {group.title}: {Array.isArray(group.values) ? group.values.join(', ') : ''}
+                </li>
+              ))}
             </ul>
 
             <h2>ООО «Текстиль Комплекс»</h2>

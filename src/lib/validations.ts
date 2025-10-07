@@ -158,33 +158,39 @@ export const pageSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-// Settings validations
+// Settings validations (admin panel)
 export const settingsSchema = z.object({
-  siteName: z.string().min(2, 'Название сайта обязательно'),
+  // Contact section
+  contactEmail: z.string().email('Некорректный email'),
+  contactPhone: z.string().min(5, 'Некорректный номер телефона'),
+  address: z.string().min(2, 'Укажите адрес'),
+
+  // Socials: dynamic list of label/url pairs
+  socialLinks: z
+    .array(
+      z.object({
+        label: z.string().min(1, 'Название обязательно'),
+        url: z.string().min(1, 'Ссылка обязательна'),
+      })
+    )
+    .default([]),
+
+  // Additional contacts: list where each item can contain multiple values
+  extraContacts: z
+    .array(
+      z.object({
+        title: z.string().min(1, 'Название обязательно'),
+        values: z.array(z.string().min(1)).default([]),
+      })
+    )
+    .default([]),
+
+  // Legacy/optional fields kept for backward compatibility (ignored by UI)
+  siteName: z.string().optional(),
   siteDescription: z.string().optional(),
   logo: z.string().optional(),
   favicon: z.string().optional(),
-  contactEmail: z.string().email('Некорректный email'),
-  contactPhone: z.string().min(10, 'Некорректный номер телефона'),
-  address: z.string().min(10, 'Адрес должен содержать минимум 10 символов'),
   workingHours: z.string().optional(),
-  socialLinks: z.object({
-    vk: z.string().optional(),
-    telegram: z.string().optional(),
-    whatsapp: z.string().optional(),
-    instagram: z.string().optional(),
-  }).optional(),
-  deliverySettings: z.object({
-    freeDeliveryFrom: z.number().min(0),
-    defaultDeliveryPrice: z.number().min(0),
-  }),
-  emailSettings: z.object({
-    smtpHost: z.string(),
-    smtpPort: z.number(),
-    smtpUser: z.string(),
-    smtpPassword: z.string(),
-    fromEmail: z.string().email(),
-  }),
 });
 
 // File upload validations

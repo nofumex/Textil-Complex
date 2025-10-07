@@ -6,14 +6,14 @@ import { settingsSchema } from '@/lib/validations';
 export async function GET(request: NextRequest) {
   try {
     // Verify admin role
-    await verifyRole(request, ['ADMIN']);
+    await verifyRole(request, ['ADMIN', 'MANAGER']);
 
     const settings = await db.setting.findMany({
       orderBy: { key: 'asc' },
     });
 
     // Convert to key-value object
-    const settingsObject = settings.reduce((acc, setting) => {
+    const rawObject = settings.reduce((acc, setting) => {
       let value: any = setting.value;
       
       // Parse value based on type
@@ -39,10 +39,50 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {} as Record<string, any>);
 
-    return NextResponse.json({
-      success: true,
-      data: settingsObject,
-    });
+    // Defaults to ensure admin UI is prefilled with current site data
+    const DEFAULTS = {
+      contactEmail: 'za-bol@yandex.ru',
+      contactPhone: '+7 (391) 278‒46‒72',
+      address: 'Маерчака, 49г склад №4',
+      socialLinks: [
+        { label: 'WB', url: 'Wildberries' },
+        { label: 'ВК', url: 'vk.com/stiligoroda' },
+      ],
+      extraContacts: [
+        {
+          title: 'Отдел продаж готовых изделий',
+          values: ['+7 (391) 278-04-60', '+7(967) 608-04-60', '+7 (967) 612-32-54'],
+        },
+        {
+          title: 'Отдел расчета (цех пошива)',
+          values: ['+7 (391) 278-04-60', '+7 (905) 976-46-25'],
+        },
+        {
+          title: 'Отдел продаж (одежда для дома)',
+          values: ['+7 (923) 015-28-10'],
+        },
+      ],
+    } as const;
+
+    // Normalize to new schema (camelCase and arrays) with defaults
+    const normalized = {
+      contactEmail: rawObject.contactEmail || rawObject.contact_email || DEFAULTS.contactEmail,
+      contactPhone: rawObject.contactPhone || rawObject.contact_phone || DEFAULTS.contactPhone,
+      address: rawObject.address || DEFAULTS.address,
+      socialLinks: Array.isArray(rawObject.socialLinks)
+        ? rawObject.socialLinks
+        : (rawObject.vk || rawObject.telegram || rawObject.whatsapp || rawObject.instagram)
+        ? [
+            rawObject.vk && { label: 'ВК', url: String(rawObject.vk) },
+            rawObject.telegram && { label: 'Telegram', url: String(rawObject.telegram) },
+            rawObject.whatsapp && { label: 'WhatsApp', url: String(rawObject.whatsapp) },
+            rawObject.instagram && { label: 'Instagram', url: String(rawObject.instagram) },
+          ].filter(Boolean) as { label: string; url: string }[]
+        : DEFAULTS.socialLinks,
+      extraContacts: Array.isArray(rawObject.extraContacts) ? rawObject.extraContacts : DEFAULTS.extraContacts,
+    };
+
+    return NextResponse.json({ success: true, data: normalized });
 
   } catch (error) {
     console.error('Get settings error:', error);
@@ -64,7 +104,7 @@ export async function PUT(request: NextRequest) {
     // Validate settings data
     const validatedData = settingsSchema.parse(body);
 
-    // Update settings
+    // Update settings — write into flat settings table using camelCase keys
     const updatePromises = Object.entries(validatedData).map(async ([key, value]) => {
       let stringValue: string;
       let type: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' = 'STRING';
@@ -98,7 +138,7 @@ export async function PUT(request: NextRequest) {
       orderBy: { key: 'asc' },
     });
 
-    const settingsObject = settings.reduce((acc, setting) => {
+    const rawObject = settings.reduce((acc, setting) => {
       let value: any = setting.value;
       
       switch (setting.type) {
@@ -123,11 +163,48 @@ export async function PUT(request: NextRequest) {
       return acc;
     }, {} as Record<string, any>);
 
-    return NextResponse.json({
-      success: true,
-      data: settingsObject,
-      message: 'Настройки обновлены успешно',
-    });
+    const DEFAULTS = {
+      contactEmail: 'za-bol@yandex.ru',
+      contactPhone: '+7 (391) 278‒46‒72',
+      address: 'Маерчака, 49г склад №4',
+      socialLinks: [
+        { label: 'WB', url: 'Wildberries' },
+        { label: 'ВК', url: 'vk.com/stiligoroda' },
+      ],
+      extraContacts: [
+        {
+          title: 'Отдел продаж готовых изделий',
+          values: ['+7 (391) 278-04-60', '+7(967) 608-04-60', '+7 (967) 612-32-54'],
+        },
+        {
+          title: 'Отдел расчета (цех пошива)',
+          values: ['+7 (391) 278-04-60', '+7 (905) 976-46-25'],
+        },
+        {
+          title: 'Отдел продаж (одежда для дома)',
+          values: ['+7 (923) 015-28-10'],
+        },
+      ],
+    } as const;
+
+    const normalized = {
+      contactEmail: rawObject.contactEmail || rawObject.contact_email || DEFAULTS.contactEmail,
+      contactPhone: rawObject.contactPhone || rawObject.contact_phone || DEFAULTS.contactPhone,
+      address: rawObject.address || DEFAULTS.address,
+      socialLinks: Array.isArray(rawObject.socialLinks)
+        ? rawObject.socialLinks
+        : (rawObject.vk || rawObject.telegram || rawObject.whatsapp || rawObject.instagram)
+        ? [
+            rawObject.vk && { label: 'ВК', url: String(rawObject.vk) },
+            rawObject.telegram && { label: 'Telegram', url: String(rawObject.telegram) },
+            rawObject.whatsapp && { label: 'WhatsApp', url: String(rawObject.whatsapp) },
+            rawObject.instagram && { label: 'Instagram', url: String(rawObject.instagram) },
+          ].filter(Boolean) as { label: string; url: string }[]
+        : DEFAULTS.socialLinks,
+      extraContacts: Array.isArray(rawObject.extraContacts) ? rawObject.extraContacts : DEFAULTS.extraContacts,
+    };
+
+    return NextResponse.json({ success: true, data: normalized, message: 'Настройки обновлены успешно' });
 
   } catch (error) {
     console.error('Update settings error:', error);

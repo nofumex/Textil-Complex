@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Menu, X, ShoppingCart, User, Search, Phone, Clock, LayoutDashboard, MapPin, Mail } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, Search, Phone, LayoutDashboard, MapPin, Mail } from 'lucide-react';
 import { useAuthStore } from '@/store/auth';
 import { useCartStore } from '@/store/cart';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
+import { usePublicSettings } from '@/hooks/useApi';
 
 export const Header: React.FC = () => {
   const [mounted, setMounted] = useState(false);
@@ -19,6 +20,7 @@ export const Header: React.FC = () => {
   const { getTotalItems } = useCartStore();
   const router = useRouter();
   const cartItemsCount = getTotalItems();
+  const { data: publicSettings } = usePublicSettings();
 
   const navigation = [
     { name: 'Главная', href: '/' },
@@ -38,24 +40,28 @@ export const Header: React.FC = () => {
       {/* Top bar */}
       <div className="bg-gray-50 py-2">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-center text-sm text-gray-600">
+            <div className="flex justify-between items-center text-sm text-gray-600">
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center space-x-1">
                 <MapPin className="h-4 w-4" />
-                <span>Маерчака, 49г склад №4</span>
+                  <span>{publicSettings?.address || ''}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Phone className="h-4 w-4" />
-                <span>+7 (391) 278‒46‒72</span>
+                  <span>{publicSettings?.contactPhone || ''}</span>
               </div>
               <div className="flex items-center space-x-1">
                 <Mail className="h-4 w-4" />
-                <span>za-bol@yandex.ru</span>
+                  <span>{publicSettings?.contactEmail || ''}</span>
               </div>
-              <div className="flex items-center space-x-1">
-                <Clock className="h-4 w-4" />
-                <span>ПН-ПТ 09:00–18:00 СБ 10:00-14:00</span>
-              </div>
+                <div className="flex items-center space-x-1">
+                  {/* Статичная информация, не из настроек */}
+                  <span className="inline-flex items-center">
+                    {/* Reuse Phone icon class for alignment */}
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  </span>
+                  <span>ПН-ПТ 09:00–18:00 СБ 10:00-14:00</span>
+                </div>
             </div>
             <div className="hidden md:flex items-center space-x-4">
               {isAuthenticated ? (

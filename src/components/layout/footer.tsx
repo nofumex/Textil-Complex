@@ -1,9 +1,12 @@
+'use client';
 import React from 'react';
 import Link from 'next/link';
 import { Phone, Mail, MapPin, Clock } from 'lucide-react';
+import { usePublicSettings } from '@/hooks/useApi';
 
 export const Footer: React.FC = () => {
   const currentYear = new Date().getFullYear();
+  const { data: publicSettings } = usePublicSettings();
 
   return (
     <footer className="bg-gray-900 text-white">
@@ -94,22 +97,25 @@ export const Footer: React.FC = () => {
           <div className="space-y-4">
             <h4 className="text-lg font-semibold">Контакты</h4>
             <div className="space-y-3">
-              <div className="text-white font-medium">ул. Маерчака, 49Г (склад 5Б)</div>
-              <div className="text-gray-300">
-                Единый номер телефона: <span className="text-white">+7(967) 612-32-54</span>
-              </div>
-              <div className="text-white">za-bol@yandex.ru</div>
+              <div className="text-gray-300">Адрес</div>
+              <div className="text-white font-medium">{publicSettings?.address || ''}</div>
+              <div className="text-gray-300">Единый номер телефона</div>
+              <div className="text-white">{publicSettings?.contactPhone || ''}</div>
+              <div className="text-gray-300">Единая почта</div>
+              <div className="text-white">{publicSettings?.contactEmail || ''}</div>
               <div className="text-gray-300">660048, г. Красноярск, ул. Маерчака, 49Г, склад № 5Б</div>
-              <div className="text-white mt-4">Отдел продаж и склад в г. Красноярске:</div>
-              <div className="text-gray-300">Отдел продаж готовых изделий</div>
-              <div className="text-white">+7 (391) 278-04-60</div>
-              <div className="text-white">+7(967) 608-04-60</div>
-              <div className="text-white">+7 (967) 612-32-54</div>
-              <div className="text-gray-300 mt-3">Отдел расчета (цех пошива)</div>
-              <div className="text-white">+7 (391) 278-04-60</div>
-              <div className="text-white">+7 (905) 976-46-25</div>
-              <div className="text-gray-300 mt-3">Отдел продаж (одежда для дома)</div>
-              <div className="text-white">+7 (923) 015-28-10</div>
+              {(publicSettings?.extraContacts || []).length > 0 && (
+                <div className="space-y-3 mt-4">
+                  {publicSettings?.extraContacts?.map((group: any, idx: number) => (
+                    <div key={idx}>
+                      <div className="text-gray-300">{group.title}</div>
+                      {(group.values || []).map((v: string, i: number) => (
+                        <div key={i} className="text-white">{v}</div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -134,11 +140,11 @@ export const Footer: React.FC = () => {
 
         {/* Map */}
         <div className="mt-12">
-          <h4 className="text-lg font-semibold mb-4">Наш склад на карте</h4>
+          <h4 className="text-lg font-semibold mb-4">Наш адрес на карте</h4>
           <div className="w-full h-72 rounded-lg overflow-hidden border border-gray-800">
             <iframe
-              title="Карта склада — ул. Маерчака, 49Г, склад № 5Б"
-              src={"https://www.google.com/maps?q=" + encodeURIComponent("Красноярск, ул. Маерчака, 49Г, склад № 5Б") + "&output=embed"}
+              title={"Карта — " + (publicSettings?.address || '')}
+              src={"https://www.google.com/maps?q=" + encodeURIComponent(publicSettings?.address || '') + "&output=embed"}
               width="100%"
               height="100%"
               style={{ border: 0 }}
@@ -155,16 +161,23 @@ export const Footer: React.FC = () => {
             <div className="text-gray-400 text-sm">
               © {currentYear} ООО «Текстиль Комплекс». Все права защищены.
             </div>
-            <div className="flex space-x-6">
-              <Link href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Политика конфиденциальности
-              </Link>
-              <Link href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Условия использования
-              </Link>
-              <Link href="/sitemap.xml" className="text-gray-400 hover:text-white text-sm transition-colors">
-                Карта сайта
-              </Link>
+            <div className="flex items-center">
+              <a
+                href="https://casadigital.ru/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-3 rounded-md border border-gray-800 bg-gray-800/40 px-3 py-2 text-gray-300 hover:text-white hover:border-gray-700 hover:bg-gray-800 transition-colors"
+                aria-label="Сайт разработан агентством Casa Digital"
+              >
+                <span className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded">
+                  <img
+                    src="/CasaDigitalLogo.png"
+                    alt="Casa Digital"
+                    className="h-6 w-6 object-contain"
+                  />
+                </span>
+                <span className="text-sm">Сайт разработан агентством <span className="font-semibold">Casa Digital</span></span>
+              </a>
             </div>
           </div>
         </div>

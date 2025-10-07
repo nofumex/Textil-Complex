@@ -20,8 +20,7 @@ export async function GET() {
     { url: '/contacts', priority: 0.6, changefreq: 'monthly' as const },
     { url: '/delivery', priority: 0.5, changefreq: 'monthly' as const },
     { url: '/return', priority: 0.4, changefreq: 'monthly' as const },
-    { url: '/privacy', priority: 0.3, changefreq: 'yearly' as const },
-    { url: '/terms', priority: 0.3, changefreq: 'yearly' as const },
+    // Removed privacy and terms pages
   ];
 
   staticPages.forEach(page => {

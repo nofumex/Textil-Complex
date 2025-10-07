@@ -134,14 +134,7 @@ export default function RegisterPage() {
                     className="mt-1 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                   />
                   <label className="ml-2 text-sm text-gray-600">
-                    Я согласен с{' '}
-                    <Link href="/terms" className="text-primary-600 hover:text-primary-500">
-                      условиями использования
-                    </Link>{' '}
-                    и{' '}
-                    <Link href="/privacy" className="text-primary-600 hover:text-primary-500">
-                      политикой конфиденциальности
-                    </Link>
+                    Я согласен на обработку персональных данных
                   </label>
                 </div>
 

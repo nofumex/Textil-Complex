@@ -314,6 +314,11 @@ export function useSettings() {
   return useApi('/admin/settings');
 }
 
+// Public settings for site pages
+export function usePublicSettings() {
+  return useApi('/public-settings');
+}
+
 // Mutations hook for generic operations
 export function useMutation<T = any>(
   url: string,

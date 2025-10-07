@@ -392,14 +392,35 @@ async function seed() {
     // Create settings
     console.log('⚙️ Создаём настройки...');
     const settings = [
-      { key: 'site_name', value: 'Текстиль Комплекс', type: 'STRING' },
-      { key: 'site_description', value: 'Постельные принадлежности высокого качества', type: 'STRING' },
-      { key: 'contact_email', value: 'info@textil-kompleks.ru', type: 'STRING' },
-      { key: 'contact_phone', value: '+7 (495) 123-45-67', type: 'STRING' },
-      { key: 'address', value: 'г. Москва, ул. Примерная, д. 123', type: 'STRING' },
-      { key: 'working_hours', value: 'Пн-Пт: 9:00-18:00, Сб: 10:00-15:00', type: 'STRING' },
-      { key: 'free_delivery_from', value: '3000', type: 'NUMBER' },
-      { key: 'default_delivery_price', value: '500', type: 'NUMBER' },
+      { key: 'contactEmail', value: 'za-bol@yandex.ru', type: 'STRING' },
+      { key: 'contactPhone', value: '+7 (391) 278‒46‒72', type: 'STRING' },
+      { key: 'address', value: 'Маерчака, 49г склад №4', type: 'STRING' },
+      {
+        key: 'socialLinks',
+        value: JSON.stringify([
+          { label: 'WB', url: 'Wildberries' },
+          { label: 'ВК', url: 'vk.com/stiligoroda' },
+        ]),
+        type: 'JSON',
+      },
+      {
+        key: 'extraContacts',
+        value: JSON.stringify([
+          {
+            title: 'Отдел продаж готовых изделий',
+            values: ['+7 (391) 278-04-60', '+7(967) 608-04-60', '+7 (967) 612-32-54'],
+          },
+          {
+            title: 'Отдел расчета (цех пошива)',
+            values: ['+7 (391) 278-04-60', '+7 (905) 976-46-25'],
+          },
+          {
+            title: 'Отдел продаж (одежда для дома)',
+            values: ['+7 (923) 015-28-10'],
+          },
+        ]),
+        type: 'JSON',
+      },
     ];
 
     for (const setting of settings) {
