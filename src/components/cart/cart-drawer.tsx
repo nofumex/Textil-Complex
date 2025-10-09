@@ -48,24 +48,31 @@ export const CartDrawer: React.FC = () => {
                     </div>
                     <div>
                       <div className="text-sm font-medium line-clamp-2 w-40">{item.product.title}</div>
+                      {(item.selectedColor || item.selectedSize) && (
+                        <div className="text-xs text-gray-600">
+                          {item.selectedColor && <span>Цвет: {item.selectedColor}</span>}
+                          {item.selectedColor && item.selectedSize && <span>, </span>}
+                          {item.selectedSize && <span>Размер: {item.selectedSize}</span>}
+                        </div>
+                      )}
                       <div className="text-xs text-gray-500">{currency(item.price)}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="flex items-center border rounded">
-                      <button className="px-2" onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))}>-</button>
+                      <button className="px-2" onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}>-</button>
                       <input
                         value={item.quantity}
                         onChange={(e) => {
                           const val = parseInt(e.target.value) || 1;
-                          updateQuantity(item.productId, Math.max(1, val));
+                          updateQuantity(item.id, Math.max(1, val));
                         }}
                         className="w-10 text-center"
                       />
-                      <button className="px-2" onClick={() => updateQuantity(item.productId, item.quantity + 1)}>+</button>
+                      <button className="px-2" onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
                     </div>
                     <div className="w-20 text-right text-sm font-semibold">{currency(item.price * item.quantity)}</div>
-                    <button className="text-red-600" onClick={() => removeItem(item.productId)} aria-label="Удалить">×</button>
+                    <button className="text-red-600" onClick={() => removeItem(item.id)} aria-label="Удалить">×</button>
                   </div>
                 </div>
               ))}

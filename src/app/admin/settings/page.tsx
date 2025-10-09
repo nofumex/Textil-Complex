@@ -9,7 +9,12 @@ import {
   Save, 
   RefreshCw,
   Phone,
-  Link
+  Link,
+  Image as ImageIcon,
+  Upload,
+  Trash2,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -23,6 +28,16 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
+  
+  // Hero images state
+  const [heroImages, setHeroImages] = useState<any[]>([]);
+  const [heroImagesLoading, setHeroImagesLoading] = useState(false);
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [newImageAlt, setNewImageAlt] = useState('');
+  const [uploading, setUploading] = useState(false);
+  
+  // In-memory storage for testing when database is not available
+  const [mockImages, setMockImages] = useState<any[]>([]);
 
   const { data: settingsData, loading: dataLoading, error } = useSettings();
 
@@ -31,6 +46,139 @@ export default function SettingsPage() {
       setSettings(settingsData);
     }
   }, [settingsData]);
+
+  // Load hero images
+  useEffect(() => {
+    loadHeroImages();
+  }, []);
+
+  const loadHeroImages = async () => {
+    setHeroImagesLoading(true);
+    try {
+      const response = await fetch('/api/admin/hero-images', {
+        credentials: 'include',
+      });
+      const result = await response.json();
+      if (result.success) {
+        setHeroImages(result.data);
+      } else {
+        // If API fails, use mock data
+        setHeroImages(mockImages);
+      }
+    } catch (error) {
+      console.error('Error loading hero images:', error);
+      // If API fails, use mock data
+      setHeroImages(mockImages);
+    } finally {
+      setHeroImagesLoading(false);
+    }
+  };
+
+  const addHeroImage = async () => {
+    if (!newImageFile) return;
+    
+    setUploading(true);
+    try {
+      // First upload the file
+      const formData = new FormData();
+      formData.append('file', newImageFile);
+      
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      
+      const uploadResult = await uploadResponse.json();
+      if (!uploadResult.success) {
+        setMessage(`Ошибка загрузки файла: ${uploadResult.error}`);
+        return;
+      }
+      
+      // Then add to hero images
+      const response = await fetch('/api/admin/hero-images', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          url: uploadResult.path,
+          alt: newImageAlt,
+          order: heroImages.length,
+        }),
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        // Add to mock storage as well
+        const newImage = {
+          id: result.data.id,
+          url: uploadResult.path,
+          alt: newImageAlt,
+          order: heroImages.length,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+        setMockImages(prev => [...prev, newImage]);
+        
+        setNewImageFile(null);
+        setNewImageAlt('');
+        loadHeroImages();
+        setMessage('Изображение добавлено');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(`Ошибка: ${result.error}`);
+      }
+    } catch (error) {
+      setMessage('Ошибка при добавлении изображения');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const updateHeroImage = async (id: string, updates: any) => {
+    try {
+      const response = await fetch('/api/admin/hero-images', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ id, ...updates }),
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        loadHeroImages();
+        setMessage('Изображение обновлено');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(`Ошибка: ${result.error}`);
+      }
+    } catch (error) {
+      setMessage('Ошибка при обновлении изображения');
+    }
+  };
+
+  const deleteHeroImage = async (id: string) => {
+    if (!confirm('Удалить изображение?')) return;
+    
+    try {
+      const response = await fetch(`/api/admin/hero-images?id=${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        loadHeroImages();
+        setMessage('Изображение удалено');
+        setTimeout(() => setMessage(''), 3000);
+      } else {
+        setMessage(`Ошибка: ${result.error}`);
+      }
+    } catch (error) {
+      setMessage('Ошибка при удалении изображения');
+    }
+  };
 
   const handleInputChange = (key: string, value: any) => {
     setSettings((prev: any) => ({ ...prev, [key]: value }));
@@ -120,6 +268,7 @@ export default function SettingsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // Включаем передачу cookies для аутентификации
         body: JSON.stringify(settings),
       });
 
@@ -269,6 +418,136 @@ export default function SettingsPage() {
             </div>
           ))}
           <Button variant="outline" onClick={addSocial}>Добавить соцсеть</Button>
+        </CardContent>
+      </Card>
+
+      {/* Hero Images */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <ImageIcon className="h-5 w-5 mr-2" />
+            Изображения на главной странице
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Add new image */}
+          <div className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+            <h4 className="font-medium mb-3">Добавить новое изображение</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Выберите файл</label>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => setNewImageFile(e.target.files?.[0] || null)}
+                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                {newImageFile && (
+                  <div className="mt-2">
+                    <div className="text-sm text-gray-600">
+                      Выбран: {newImageFile.name} ({(newImageFile.size / 1024 / 1024).toFixed(2)} MB)
+                    </div>
+                    <div className="mt-2">
+                      <img 
+                        src={URL.createObjectURL(newImageFile)} 
+                        alt="Предварительный просмотр" 
+                        className="w-32 h-32 object-cover rounded border"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Alt текст (описание)</label>
+                <Input
+                  value={newImageAlt}
+                  onChange={(e) => setNewImageAlt(e.target.value)}
+                  placeholder="Описание изображения"
+                />
+              </div>
+            </div>
+            <Button 
+              onClick={addHeroImage} 
+              disabled={!newImageFile || uploading}
+              className="mt-3"
+            >
+              {uploading ? (
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              {uploading ? 'Загрузка...' : 'Добавить изображение'}
+            </Button>
+          </div>
+
+          {/* Existing images */}
+          <div>
+            <h4 className="font-medium mb-3">Текущие изображения</h4>
+            {heroImagesLoading ? (
+              <div className="text-center py-4">Загрузка...</div>
+            ) : heroImages.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                Изображения не добавлены
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {heroImages.map((image, index) => (
+                  <div key={image.id} className="flex items-center gap-4 p-4 border border-gray-200 rounded-lg">
+                    <div className="w-20 h-20 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                      <img 
+                        src={image.url} 
+                        alt={image.alt || ''} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = '/placeholder-product.jpg';
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{image.alt || 'Без описания'}</div>
+                      <div className="text-xs text-gray-500 truncate">
+                        {image.url.startsWith('/uploads/') ? 'Загруженный файл' : image.url}
+                      </div>
+                      <div className="text-xs text-gray-400">Порядок: {image.order}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant={image.isActive ? "default" : "outline"}
+                        onClick={() => updateHeroImage(image.id, { isActive: !image.isActive })}
+                      >
+                        {image.isActive ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateHeroImage(image.id, { order: index - 1 })}
+                        disabled={index === 0}
+                      >
+                        ↑
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => updateHeroImage(image.id, { order: index + 1 })}
+                        disabled={index === heroImages.length - 1}
+                      >
+                        ↓
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => deleteHeroImage(image.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 

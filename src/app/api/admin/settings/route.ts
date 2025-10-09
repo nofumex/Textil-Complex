@@ -5,12 +5,49 @@ import { settingsSchema } from '@/lib/validations';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('Settings API: Starting request');
+    
     // Verify admin role
     await verifyRole(request, ['ADMIN', 'MANAGER']);
 
-    const settings = await db.setting.findMany({
-      orderBy: { key: 'asc' },
-    });
+    console.log('Settings API: Fetching settings from database');
+    
+    let settings: any[] = [];
+    try {
+      settings = await db.setting.findMany({
+        orderBy: { key: 'asc' },
+      });
+      console.log('Settings API: Found settings:', settings.length);
+    } catch (dbError) {
+      console.log('Settings API: Database error, using defaults:', dbError);
+      // If database is not available, return default settings
+      const DEFAULTS = {
+        contactEmail: 'za-bol@yandex.ru',
+        contactPhone: '+7 (391) 278‒46‒72',
+        address: 'Маерчака, 49г склад №4',
+        socialLinks: [
+          { label: 'WB', url: 'Wildberries' },
+          { label: 'ВК', url: 'vk.com/stiligoroda' },
+        ],
+        extraContacts: [
+          {
+            title: 'Отдел продаж готовых изделий',
+            values: ['+7 (391) 278-04-60', '+7(967) 608-04-60', '+7 (967) 612-32-54'],
+          },
+          {
+            title: 'Отдел расчета (цех пошива)',
+            values: ['+7 (391) 278-04-60', '+7 (905) 976-46-25'],
+          },
+          {
+            title: 'Отдел продаж (одежда для дома)',
+            values: ['+7 (923) 015-28-10'],
+          },
+        ],
+      };
+      
+      console.log('Settings API: Returning default settings');
+      return NextResponse.json({ success: true, data: DEFAULTS });
+    }
 
     // Convert to key-value object
     const rawObject = settings.reduce((acc, setting) => {
@@ -82,13 +119,14 @@ export async function GET(request: NextRequest) {
       extraContacts: Array.isArray(rawObject.extraContacts) ? rawObject.extraContacts : DEFAULTS.extraContacts,
     };
 
+    console.log('Settings API: Returning normalized data');
     return NextResponse.json({ success: true, data: normalized });
 
   } catch (error) {
     console.error('Get settings error:', error);
     
     return NextResponse.json(
-      { success: false, error: 'Ошибка получения настроек' },
+      { success: false, error: 'Ошибка получения настроек', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

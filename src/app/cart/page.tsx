@@ -48,27 +48,27 @@ export default function CartPage() {
                   <div className="flex items-center border rounded">
                     <button
                       className="px-3 py-1 text-lg"
-                      onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))}
+                      onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
                     >-
                     </button>
                     <input
                       value={item.quantity}
                       onChange={(e) => {
                         const val = parseInt(e.target.value) || 1;
-                        updateQuantity(item.productId, Math.max(1, val));
+                        updateQuantity(item.id, Math.max(1, val));
                       }}
                       className="w-12 text-center"
                     />
                     <button
                       className="px-3 py-1 text-lg"
-                      onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
                     >+
                     </button>
                   </div>
                   <div className="font-semibold w-28 text-right">{currency(item.price * item.quantity)}</div>
                   <button
                     className="text-red-600 hover:text-red-700"
-                    onClick={() => removeItem(item.productId)}
+                    onClick={() => removeItem(item.id)}
                     aria-label="Удалить"
                     title="Удалить"
                   >×

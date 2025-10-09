@@ -1,9 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, CheckCircle, Truck, Clock, Award } from 'lucide-react';
+import { ArrowRight, CheckCircle, Truck, Clock, Award, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 // Static import allows using an image from the repository root (bundled by Next.js)
 // The file `image.png` is located at the project root. Next can bundle it via static import.
@@ -13,6 +13,52 @@ import { Button } from '@/components/ui/button';
 import HeroImage from '../../../image.png';
 
 export const HeroSection: React.FC = () => {
+  const [heroImages, setHeroImages] = useState<any[]>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadHeroImages();
+  }, []);
+
+  const loadHeroImages = async () => {
+    try {
+      const response = await fetch('/api/hero-images');
+      const result = await response.json();
+      if (result.success && result.data.length > 0) {
+        setHeroImages(result.data);
+      } else {
+        // If no images from API, use empty array (will show static image)
+        setHeroImages([]);
+      }
+    } catch (error) {
+      console.error('Error loading hero images:', error);
+      // If API fails, use empty array (will show static image)
+      setHeroImages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + heroImages.length) % heroImages.length);
+  };
+
+  // Auto-advance slides every 5 seconds
+  useEffect(() => {
+    if (heroImages.length > 1) {
+      const interval = setInterval(nextImage, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [heroImages.length]);
+
+  const currentImage = heroImages[currentImageIndex];
+  const hasImages = heroImages.length > 0;
+
   return (
     <section className="relative bg-gradient-to-br from-primary-50 to-white overflow-hidden">
       <div className="absolute inset-0 bg-[url('/patterns/dots.svg')] opacity-5"></div>
@@ -22,14 +68,80 @@ export const HeroSection: React.FC = () => {
           {/* Image (first on mobile) */}
           <div className="relative lg:order-2 mb-8 pb-8">
             <div className="rounded-2xl overflow-hidden shadow-2xl relative bg-white">
-              <Image
-                src={HeroImage}
-                alt="Главное изображение"
-                quality={100}
-                unoptimized
-                className="w-full h-auto"
-                priority
-              />
+              {loading ? (
+                <div className="w-full h-96 bg-gray-200 animate-pulse flex items-center justify-center">
+                  <span className="text-gray-500">Загрузка...</span>
+                </div>
+              ) : hasImages ? (
+                <div className="relative overflow-hidden">
+                  <div className="relative w-full h-96">
+                    {heroImages.map((image, index) => (
+                      <Image
+                        key={image.id}
+                        src={image.url}
+                        alt={image.alt || "Главное изображение"}
+                        width={800}
+                        height={600}
+                        quality={100}
+                        unoptimized
+                        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-in-out ${
+                          index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        priority={index === 0}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Navigation arrows */}
+                  {heroImages.length > 1 && (
+                    <>
+                      <button
+                        onClick={prevImage}
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"
+                        aria-label="Предыдущее изображение"
+                      >
+                        <ChevronLeft className="h-6 w-6" />
+                      </button>
+                      <button
+                        onClick={nextImage}
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/20 hover:bg-white/40 text-white rounded-full p-3 shadow-lg transition-all duration-200 hover:scale-110"
+                        aria-label="Следующее изображение"
+                      >
+                        <ChevronRight className="h-6 w-6" />
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Dots indicator */}
+                  {heroImages.length > 1 && (
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-3">
+                      {heroImages.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                            index === currentImageIndex 
+                              ? 'bg-white shadow-lg scale-125' 
+                              : 'bg-white/60 hover:bg-white/80 hover:scale-110'
+                          }`}
+                          aria-label={`Перейти к изображению ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Image
+                  src={HeroImage}
+                  alt="Главное изображение"
+                  width={800}
+                  height={600}
+                  quality={100}
+                  unoptimized
+                  className="w-full h-auto"
+                  priority
+                />
+              )}
             </div>
 
             {/* Floating cards outside, slightly overlapping the image */}

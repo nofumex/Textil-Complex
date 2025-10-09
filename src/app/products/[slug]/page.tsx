@@ -1,6 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import ProductActions from '@/components/product/product-actions';
+import ProductDetails from '@/components/product/product-details';
 
 interface ProductPageProps {
   params: { slug: string };
@@ -41,27 +41,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               )}
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-3">{product.title}</h1>
-              {product.material && <p className="text-gray-600 mb-6">{product.material}</p>}
-              <div className="flex items-baseline space-x-3 mb-6">
-                <span className="text-3xl font-bold">{new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(Number(product.price))}</span>
-                {product.oldPrice && (
-                  <span className="text-gray-400 line-through">{new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(Number(product.oldPrice))}</span>
-                )}
-              </div>
-              <div className="prose max-w-none mb-8">
-                <p>{product.description}</p>
-                {product.content && <div dangerouslySetInnerHTML={{ __html: product.content }} />}
-              </div>
-              <div className="space-y-2 text-sm text-gray-600 mb-6">
-                {product.dimensions && <div>Размеры: {product.dimensions}</div>}
-                {product.weight && <div>Вес: {product.weight} кг</div>}
-                <div>Наличие: {product.isInStock ? 'В наличии' : 'Нет в наличии'}</div>
-                <div>Артикул: {product.sku}</div>
-              </div>
-
-              {/* Actions */}
-              <ProductActions product={product} />
+              <ProductDetails product={product} />
             </div>
           </div>
         </div>

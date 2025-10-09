@@ -5,24 +5,49 @@ import { ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/store/cart';
 import { useToast } from '@/components/ui/toast';
-import { Product } from '@/types/index';
+import { Product, ProductVariant } from '@/types/index';
 
 interface ProductActionsProps {
   product: Product;
+  selectedVariant?: ProductVariant | null;
+  selectedColor?: string;
+  selectedSize?: string;
 }
 
-export const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
+export const ProductActions: React.FC<ProductActionsProps> = ({ 
+  product, 
+  selectedVariant,
+  selectedColor,
+  selectedSize 
+}) => {
   const { addItem, openCart } = useCartStore();
-  const { success } = useToast();
+  const { success, error } = useToast();
   const [isAdding, setIsAdding] = useState(false);
 
-  const canBuy = product.isInStock && (product.stock ?? 0) > 0;
+  const canBuy = selectedVariant 
+    ? selectedVariant.stock > 0 
+    : product.isInStock && (product.stock ?? 0) > 0;
 
   const handleAddToCart = async () => {
     if (!canBuy) return;
+    
+    // Check if variant selection is required
+    if (product.variants && product.variants.length > 0 && !selectedVariant) {
+      error('Выберите вариант', 'Пожалуйста, выберите цвет и размер товара');
+      return;
+    }
+
     setIsAdding(true);
     try {
-      addItem(product, 1);
+      const itemToAdd = {
+        ...product,
+        price: selectedVariant ? Number(selectedVariant.price) : Number(product.price),
+        variantId: selectedVariant?.id,
+        selectedColor,
+        selectedSize,
+      };
+      
+      addItem(itemToAdd, 1);
       success('Товар добавлен', `${product.title} добавлен в корзину`);
       openCart();
     } finally {
@@ -32,9 +57,24 @@ export const ProductActions: React.FC<ProductActionsProps> = ({ product }) => {
 
   const handleBuyNow = async () => {
     if (!canBuy) return;
+    
+    // Check if variant selection is required
+    if (product.variants && product.variants.length > 0 && !selectedVariant) {
+      error('Выберите вариант', 'Пожалуйста, выберите цвет и размер товара');
+      return;
+    }
+
     setIsAdding(true);
     try {
-      addItem(product, 1);
+      const itemToAdd = {
+        ...product,
+        price: selectedVariant ? Number(selectedVariant.price) : Number(product.price),
+        variantId: selectedVariant?.id,
+        selectedColor,
+        selectedSize,
+      };
+      
+      addItem(itemToAdd, 1);
       window.location.href = '/checkout';
     } finally {
       setIsAdding(false);

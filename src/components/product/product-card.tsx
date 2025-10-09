@@ -152,19 +152,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   }
 
   return (
-    <div 
-      className="bg-white rounded-lg shadow-sm border hover:shadow-md transition-all duration-300 overflow-hidden group"
+    <Link 
+      href={`/products/${product.slug}`}
+      className="block bg-white rounded-lg shadow-sm border hover:shadow-md transition-all duration-300 overflow-hidden group cursor-pointer"
       data-testid="product-card"
     >
       {/* Image */}
       <div className="relative aspect-square overflow-hidden">
-        <Link href={`/products/${product.slug}`}>
-          <img
-            src={(Array.isArray(product.images) && product.images[0]) || '/placeholder-product.jpg'}
-            alt={product.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        </Link>
+        <img
+          src={(Array.isArray(product.images) && product.images[0]) || '/placeholder-product.jpg'}
+          alt={product.title}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
         
         {/* Badges */}
         <div className="absolute top-3 left-3 space-y-2">
@@ -215,11 +214,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         
 
         {/* Title */}
-        <Link href={`/products/${product.slug}`}>
-          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-primary-600 transition-colors">
-            {product.title}
-          </h3>
-        </Link>
+        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-primary-600 transition-colors">
+          {product.title}
+        </h3>
 
         {/* Material */}
         {product.material && (
@@ -248,7 +245,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </div>
 
         {/* Actions */}
-        <div className="space-y-2">
+        <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
           <Button 
             className="w-full"
             onClick={handleAddToCart}
@@ -274,7 +271,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </Button>
         </div>
       </div>
-    </div>
+    </Link>
   );
 };
 

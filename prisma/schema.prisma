@@ -9,21 +9,20 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String    @id @default(cuid())
+  email     String    @unique
   password  String
   firstName String
   lastName  String
   phone     String?
   company   String?
-  role      UserRole @default(CUSTOMER)
-  isBlocked Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  role      UserRole  @default(CUSTOMER)
+  isBlocked Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  addresses Address[]
   orders    Order[]
   reviews   Review[]
-  addresses Address[]
   sessions  Session[]
 
   @@map("users")
@@ -35,14 +34,13 @@ model Session {
   refreshToken String   @unique
   expiresAt    DateTime
   createdAt    DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
 
 model Address {
-  id      String @id @default(cuid())
+  id      String  @id @default(cuid())
   userId  String
   name    String
   street  String
@@ -51,69 +49,63 @@ model Address {
   zipCode String
   phone   String?
   isMain  Boolean @default(false)
-
-  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders Order[]
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders  Order[]
 
   @@map("addresses")
 }
 
 model Category {
-  id          String  @id @default(cuid())
+  id          String     @id @default(cuid())
   name        String
-  slug        String  @unique
+  slug        String     @unique
   description String?
   image       String?
   parentId    String?
-  isActive    Boolean @default(true)
-  sortOrder   Int     @default(0)
+  isActive    Boolean    @default(true)
+  sortOrder   Int        @default(0)
   seoTitle    String?
   seoDesc     String?
-  
-  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children Category[] @relation("CategoryHierarchy")
-  products Product[]
+  parent      Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  products    Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id          String        @id @default(cuid())
-  sku         String        @unique
+  id          String            @id @default(cuid())
+  sku         String            @unique
   title       String
-  slug        String        @unique
+  slug        String            @unique
   description String?
   content     String?
-  price       Decimal       @db.Decimal(10, 2)
-  oldPrice    Decimal?      @db.Decimal(10, 2)
-  currency    String        @default("RUB")
-  stock       Int           @default(0)
-  minOrder    Int           @default(1)
-  weight      Decimal?      @db.Decimal(8, 3)
+  price       Decimal           @db.Decimal(10, 2)
+  oldPrice    Decimal?          @db.Decimal(10, 2)
+  currency    String            @default("RUB")
+  stock       Int               @default(0)
+  minOrder    Int               @default(1)
+  weight      Decimal?          @db.Decimal(8, 3)
   dimensions  String?
   material    String?
-  category    ProductCategory @default(ECONOMY)
+  category    ProductCategory   @default(ECONOMY)
   tags        String[]
   images      String[]
-  isActive    Boolean       @default(true)
-  isFeatured  Boolean       @default(false)
-  isInStock   Boolean       @default(true)
+  isActive    Boolean           @default(true)
+  isFeatured  Boolean           @default(false)
+  isInStock   Boolean           @default(true)
   visibility  ProductVisibility @default(VISIBLE)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  
-  // SEO fields
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
   seoTitle    String?
   seoDesc     String?
   metaTitle   String?
   metaDesc    String?
-  
   categoryId  String
-  categoryObj Category @relation(fields: [categoryId], references: [id])
-  
   orderItems  OrderItem[]
-  reviews     Review[]
   variants    ProductVariant[]
+  categoryObj Category          @relation(fields: [categoryId], references: [id])
+  reviews     Review[]
 
   @@map("products")
 }
@@ -128,45 +120,36 @@ model ProductVariant {
   stock     Int     @default(0)
   sku       String  @unique
   isActive  Boolean @default(true)
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("product_variants")
 }
 
 model Order {
-  id          String      @id @default(cuid())
-  orderNumber String      @unique
-  userId      String
-  status      OrderStatus @default(NEW)
-  total       Decimal     @db.Decimal(10, 2)
-  subtotal    Decimal     @db.Decimal(10, 2)
-  delivery    Decimal     @db.Decimal(8, 2) @default(0)
-  discount    Decimal     @db.Decimal(8, 2) @default(0)
-  
-  // Customer info
-  firstName   String
-  lastName    String
-  company     String?
-  phone       String
-  email       String
-  notes       String?
-  
-  // Delivery info
+  id           String       @id @default(cuid())
+  orderNumber  String       @unique
+  userId       String
+  status       OrderStatus  @default(NEW)
+  total        Decimal      @db.Decimal(10, 2)
+  subtotal     Decimal      @db.Decimal(10, 2)
+  delivery     Decimal      @default(0) @db.Decimal(8, 2)
+  discount     Decimal      @default(0) @db.Decimal(8, 2)
+  firstName    String
+  lastName     String
+  company      String?
+  phone        String
+  email        String
+  notes        String?
   deliveryType DeliveryType @default(PICKUP)
   addressId    String?
   trackNumber  String?
-  
-  // Promocode
-  promoCode   String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  user     User        @relation(fields: [userId], references: [id])
-  address  Address?    @relation(fields: [addressId], references: [id])
-  items    OrderItem[]
-  logs     OrderLog[]
+  promoCode    String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  items        OrderItem[]
+  logs         OrderLog[]
+  address      Address?     @relation(fields: [addressId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
 
   @@map("orders")
 }
@@ -178,22 +161,20 @@ model OrderItem {
   quantity  Int
   price     Decimal @db.Decimal(10, 2)
   total     Decimal @db.Decimal(10, 2)
-  
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
 }
 
 model OrderLog {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   orderId   String
   status    OrderStatus
   comment   String?
-  createdAt DateTime @default(now())
+  createdAt DateTime    @default(now())
   createdBy String?
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@map("order_logs")
 }
@@ -208,9 +189,8 @@ model Review {
   isActive  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([productId, userId])
   @@map("reviews")
@@ -223,7 +203,7 @@ model Lead {
   email     String?
   company   String?
   message   String?
-  source    String?    // landing, catalog, etc
+  source    String?
   status    LeadStatus @default(NEW)
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -232,12 +212,24 @@ model Lead {
 }
 
 model Setting {
-  id    String @id @default(cuid())
-  key   String @unique
+  id    String      @id @default(cuid())
+  key   String      @unique
   value String
   type  SettingType @default(STRING)
 
   @@map("settings")
+}
+
+model HeroImage {
+  id        String   @id @default(cuid())
+  url       String
+  alt       String?
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("hero_images")
 }
 
 model Page {
@@ -255,16 +247,16 @@ model Page {
 }
 
 model AuditLog {
-  id        String   @id @default(cuid())
-  userId    String?
-  action    String
-  resource  String
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String
+  resource   String
   resourceId String?
-  oldData   Json?
-  newData   Json?
-  ip        String?
-  userAgent String?
-  createdAt DateTime @default(now())
+  oldData    Json?
+  newData    Json?
+  ip         String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
 
   @@map("audit_logs")
 }
@@ -316,5 +308,3 @@ enum SettingType {
   BOOLEAN
   JSON
 }
-
-

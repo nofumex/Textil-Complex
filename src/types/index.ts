@@ -88,9 +88,12 @@ export interface JWTPayload {
 export interface CartItem {
   id: string;
   productId: string;
+  variantId?: string;
   quantity: number;
   price: number;
   product: Product;
+  selectedColor?: string;
+  selectedSize?: string;
 }
 
 export interface Cart {

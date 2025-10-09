@@ -6,15 +6,15 @@ interface CartState {
   items: CartItem[];
   isOpen: boolean;
   addItem: (product: Product, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeItem: (itemId: string) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
   toggleCart: () => void;
   openCart: () => void;
   closeCart: () => void;
   getTotalPrice: () => number;
   getTotalItems: () => number;
-  getItemQuantity: (productId: string) => number;
+  getItemQuantity: (productId: string, variantId?: string, selectedColor?: string, selectedSize?: string) => number;
 }
 
 export const useCartStore = create<CartState>()(
@@ -25,23 +25,38 @@ export const useCartStore = create<CartState>()(
 
       addItem: (product, quantity = 1) => {
         const items = get().items;
-        const existingItem = items.find(item => item.productId === product.id);
+        const variantId = (product as any).variantId;
+        const selectedColor = (product as any).selectedColor;
+        const selectedSize = (product as any).selectedSize;
+        
+        // Create unique key for cart item (product + variant)
+        const itemKey = `${product.id}-${variantId || 'default'}-${selectedColor || ''}-${selectedSize || ''}`;
+        
+        const existingItem = items.find(item => 
+          item.productId === product.id && 
+          item.variantId === variantId &&
+          item.selectedColor === selectedColor &&
+          item.selectedSize === selectedSize
+        );
 
         if (existingItem) {
           set({
             items: items.map(item =>
-              item.productId === product.id
+              item.id === existingItem.id
                 ? { ...item, quantity: item.quantity + quantity }
                 : item
             ),
           });
         } else {
           const newItem: CartItem = {
-            id: `cart-${product.id}-${Date.now()}`,
+            id: `cart-${itemKey}-${Date.now()}`,
             productId: product.id,
+            variantId,
             quantity,
             price: Number(product.price),
             product,
+            selectedColor,
+            selectedSize,
           };
 
           set({
@@ -50,21 +65,21 @@ export const useCartStore = create<CartState>()(
         }
       },
 
-      removeItem: (productId) => {
+      removeItem: (itemId) => {
         set({
-          items: get().items.filter(item => item.productId !== productId),
+          items: get().items.filter(item => item.id !== itemId),
         });
       },
 
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: (itemId, quantity) => {
         if (quantity <= 0) {
-          get().removeItem(productId);
+          get().removeItem(itemId);
           return;
         }
 
         set({
           items: get().items.map(item =>
-            item.productId === productId
+            item.id === itemId
               ? { ...item, quantity }
               : item
           ),
@@ -97,8 +112,13 @@ export const useCartStore = create<CartState>()(
         return get().items.reduce((total, item) => total + item.quantity, 0);
       },
 
-      getItemQuantity: (productId) => {
-        const item = get().items.find(item => item.productId === productId);
+      getItemQuantity: (productId, variantId?, selectedColor?, selectedSize?) => {
+        const item = get().items.find(item => 
+          item.productId === productId && 
+          item.variantId === variantId &&
+          item.selectedColor === selectedColor &&
+          item.selectedSize === selectedSize
+        );
         return item ? item.quantity : 0;
       },
     }),
