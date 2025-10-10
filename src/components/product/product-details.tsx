@@ -37,6 +37,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
           <ProductVariants
             variants={product.variants}
             basePrice={Number(product.price)}
+            productSlug={product.slug}
             onVariantChange={handleVariantChange}
           />
         </div>
@@ -46,7 +47,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
       {(!product.variants || product.variants.length === 0) && (
         <div className="flex items-baseline space-x-3 mb-6">
           <span className="text-3xl font-bold">
-            {new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(Number(product.price))}
+            {new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB' }).format(currentPrice)}
           </span>
           {product.oldPrice && (
             <span className="text-gray-400 line-through">

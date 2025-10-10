@@ -95,6 +95,14 @@ export async function GET(request: NextRequest) {
                   images: true,
                 },
               },
+              variant: {
+                select: {
+                  id: true,
+                  size: true,
+                  color: true,
+                  sku: true,
+                },
+              },
             },
           },
           address: true,
@@ -198,6 +206,11 @@ export async function POST(request: NextRequest) {
     for (const item of items) {
       const product = await db.product.findUnique({
         where: { id: item.productId },
+        include: {
+          variants: {
+            where: { isActive: true },
+          },
+        },
       });
 
       if (!product || !product.isActive || !product.isInStock) {
@@ -207,21 +220,49 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (product.stock < item.quantity) {
+      let variant = null;
+      let itemPrice = Number(product.price);
+      let stockToCheck = product.stock;
+
+      // Если указана вариация, проверить её
+      if (item.variantId) {
+        variant = await db.productVariant.findFirst({
+          where: {
+            id: item.variantId,
+            productId: item.productId,
+            isActive: true,
+          },
+        });
+
+        if (!variant) {
+          return NextResponse.json(
+            { success: false, error: `Вариация товара ${product.title} не найдена` },
+            { status: 400 }
+          );
+        }
+
+        itemPrice = Number(variant.price);
+        stockToCheck = variant.stock;
+      }
+
+      if (stockToCheck < item.quantity) {
         return NextResponse.json(
           { success: false, error: `Недостаточно товара ${product.title} на складе` },
           { status: 400 }
         );
       }
 
-      const itemTotal = Number(product.price) * item.quantity;
+      const itemTotal = itemPrice * item.quantity;
       subtotal += itemTotal;
 
       orderItems.push({
         productId: item.productId,
+        variantId: variant?.id || null,
         quantity: item.quantity,
-        price: Number(product.price),
+        price: itemPrice,
         total: itemTotal,
+        selectedColor: item.selectedColor || variant?.color || null,
+        selectedSize: item.selectedSize || variant?.size || null,
       });
     }
 
@@ -295,14 +336,27 @@ export async function POST(request: NextRequest) {
 
     // Update product stock
     for (const item of items) {
-      await db.product.update({
-        where: { id: item.productId },
-        data: {
-          stock: {
-            decrement: item.quantity,
+      if (item.variantId) {
+        // Обновить остаток вариации
+        await db.productVariant.update({
+          where: { id: item.variantId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
           },
-        },
-      });
+        });
+      } else {
+        // Обновить остаток основного товара
+        await db.product.update({
+          where: { id: item.productId },
+          data: {
+            stock: {
+              decrement: item.quantity,
+            },
+          },
+        });
+      }
     }
 
     // Create order log

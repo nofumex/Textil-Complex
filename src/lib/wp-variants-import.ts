@@ -9,6 +9,7 @@ export interface WPImportOptions {
   skipInvalid?: boolean;
   categoryMapping?: Record<string, string>;
   autoCreateCategories?: boolean;
+  createAllVariants?: boolean; // Новый параметр для создания всех комбинаций
 }
 
 export interface ImportResult {
@@ -16,6 +17,7 @@ export interface ImportResult {
   processed: number;
   created: number;
   updated: number;
+  variantsCreated: number;
   errors: string[];
   warnings: string[];
 }
@@ -34,17 +36,36 @@ type WXRItem = {
   'wp:postmeta'?: Array<{ 'wp:meta_key': string; 'wp:meta_value'?: string }>|{ 'wp:meta_key': string; 'wp:meta_value'?: string };
 };
 
-export class WPXMLImporter {
+interface ProductAttributes {
+  colors: string[];
+  sizes: string[];
+  isVariable: boolean;
+}
+
+interface VariantPrice {
+  color?: string;
+  size?: string;
+  price: number;
+}
+
+export class WPVariantsImporter {
   private errors: string[] = [];
   private warnings: string[] = [];
   private processed = 0;
   private created = 0;
   private updated = 0;
+  private variantsCreated = 0;
 
   async importFromXML(xmlContent: string | string[], options: WPImportOptions = {}): Promise<ImportResult> {
     this.reset();
 
-    const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: '@_', textNodeName: '#text', trimValues: false, decodeHTMLchar: true });
+    const parser = new XMLParser({ 
+      ignoreAttributes: false, 
+      attributeNamePrefix: '@_', 
+      textNodeName: '#text', 
+      trimValues: false, 
+      decodeHTMLchar: true 
+    });
 
     const contents = Array.isArray(xmlContent) ? xmlContent : [xmlContent];
     const items: WXRItem[] = [];
@@ -94,7 +115,7 @@ export class WPXMLImporter {
       try {
         if ((item['wp:post_type'] || '').toString() !== 'product') continue;
         if ((item['wp:status'] || '') !== 'publish') {
-          // skip drafts
+          continue; // skip drafts
         }
 
         await this.processProduct(item, rowNumber, categoryMap, options, attachmentUrlById);
@@ -122,7 +143,7 @@ export class WPXMLImporter {
     const htmlContent = (item['content:encoded'] || '').toString().trim();
     const excerpt = (item['excerpt:encoded'] || item.description || '').toString().trim();
 
-    // Extract categories (prefer product_cat); fallback to first taxonomy present
+    // Extract categories
     const cats = this.asArray(item.category).filter(c => c && typeof c === 'object');
     const productCats = cats.filter(c => c['@_domain'] === 'product_cat');
     const chosenCat = (productCats[0]?.['#text'] || cats[0]?.['#text'] || '').toString();
@@ -155,20 +176,18 @@ export class WPXMLImporter {
     }
 
     const sku = (metaMap.get('_sku') || '').toString().trim();
-    const priceRaw = (metaMap.get('_price') || '').toString().trim();
     const stockStatus = (metaMap.get('_stock_status') || '').toString().trim();
     const stockRaw = (metaMap.get('_stock') || '').toString().trim();
 
-    const price = priceRaw ? parseFloat(priceRaw.replace(',', '.')) : 0;
-    if (isNaN(price) || price < 0) throw new Error('Некорректная цена');
+    // Extract product attributes
+    const attributes = this.extractProductAttributes(cats, metaMap);
+    
+    // Extract variant prices
+    const variantPrices = this.extractVariantPrices(metas);
 
     const stock = stockRaw ? parseInt(stockRaw, 10) : stockStatus === 'instock' ? 10 : 0;
 
-    // Extract product attributes (colors, sizes)
-    const color = this.extractAttribute(cats, 'pa_cvet');
-    const size = this.extractAttribute(cats, 'pa_razmer');
-
-    // Build images using _thumbnail_id and _product_image_gallery if attachment URLs are available
+    // Build images
     const images: string[] = [];
     const thumbId = metaMap.get('_thumbnail_id');
     if (thumbId) {
@@ -190,7 +209,7 @@ export class WPXMLImporter {
       finalSku = generateSKU(cat?.name || 'PRODUCT', title);
     }
 
-    // Basic product category mapping heuristic
+    // Basic product category mapping
     let productCategory: ProductCategory = 'MIDDLE';
     const catLower = chosenCat.toLowerCase();
     if (catLower.includes('эконом')) productCategory = 'ECONOMY';
@@ -198,13 +217,16 @@ export class WPXMLImporter {
 
     const visibility: ProductVisibility = 'VISIBLE';
 
+    // Calculate base price (minimum price from variants or first price)
+    const basePrice = this.calculateBasePrice(variantPrices, attributes);
+
     const data = {
       sku: finalSku,
       title,
       slug,
       description: excerpt || htmlContent.replace(/<[^>]*>/g, '').slice(0, 300),
       content: htmlContent || null,
-      price,
+      price: basePrice,
       oldPrice: null as number | null,
       currency: options.defaultCurrency || 'RUB',
       stock,
@@ -241,32 +263,84 @@ export class WPXMLImporter {
       this.created++;
     }
 
-    // Create product variants for variable products
-    const isVariable = this.asArray(item.category).some(c => 
-      c && typeof c === 'object' && c['@_domain'] === 'product_type' && c['#text'] === 'variable'
-    );
+    // Create variants
+    if (attributes.isVariable && (attributes.colors.length > 0 || attributes.sizes.length > 0)) {
+      await this.createProductVariants(product, attributes, variantPrices, options);
+    }
+  }
+
+  private extractProductAttributes(categories: any[], metaMap: Map<string, string | undefined>): ProductAttributes {
+    const colors: string[] = [];
+    const sizes: string[] = [];
+    let isVariable = false;
+
+    // Extract from categories
+    for (const cat of categories) {
+      if (!cat || typeof cat !== 'object') continue;
+      
+      const domain = cat['@_domain'];
+      const value = cat['#text'];
+      
+      if (domain === 'pa_cvet' && value) {
+        colors.push(decodeURIComponent(value.toString().trim()));
+      } else if (domain === 'pa_razmer' && value) {
+        sizes.push(decodeURIComponent(value.toString().trim()));
+      } else if (domain === 'product_type' && value === 'variable') {
+        isVariable = true;
+      }
+    }
+
+    return { colors, sizes, isVariable };
+  }
+
+  private extractVariantPrices(metas: any[]): VariantPrice[] {
+    const prices: VariantPrice[] = [];
     
-    if (isVariable) {
-      await this.createAllVariants(product, item, options);
-    } else if (color || size) {
-      // Single variant for simple products
-      const variantSku = sku || `${finalSku}-${color || 'default'}-${size || 'default'}`;
+    for (const meta of metas) {
+      if (!meta || meta['wp:meta_key'] !== '_price') continue;
+      
+      const priceValue = meta['wp:meta_value'];
+      if (priceValue) {
+        const price = parseFloat(priceValue.toString().replace(',', '.'));
+        if (!isNaN(price) && price > 0) {
+          prices.push({ price });
+        }
+      }
+    }
+
+    return prices;
+  }
+
+  private calculateBasePrice(variantPrices: VariantPrice[], attributes: ProductAttributes): number {
+    if (variantPrices.length === 0) return 0;
+    
+    // Return minimum price as base price
+    return Math.min(...variantPrices.map(vp => vp.price));
+  }
+
+  private async createProductVariants(
+    product: any,
+    attributes: ProductAttributes,
+    variantPrices: VariantPrice[],
+    options: WPImportOptions
+  ): Promise<void> {
+    const { colors, sizes } = attributes;
+    
+    // If no colors or sizes, create a default variant
+    if (colors.length === 0 && sizes.length === 0) {
+      const variantSku = `${product.sku}-default`;
       const variantData = {
         productId: product.id,
-        color: color || null,
-        size: size || null,
-        price: price,
-        stock: stock,
+        color: null,
+        size: null,
+        price: product.price,
+        stock: product.stock,
         sku: variantSku,
         isActive: true,
       };
 
       const existingVariant = await db.productVariant.findFirst({
-        where: {
-          productId: product.id,
-          color: color || null,
-          size: size || null,
-        }
+        where: { productId: product.id, color: null, size: null }
       });
 
       if (existingVariant) {
@@ -275,55 +349,15 @@ export class WPXMLImporter {
             where: { id: existingVariant.id },
             data: variantData
           });
-          this.warnings.push(`Вариация товара "${title}" обновлена`);
         }
       } else {
         await db.productVariant.create({ data: variantData });
-        this.warnings.push(`Создана вариация для товара "${title}"`);
+        this.variantsCreated++;
       }
-    }
-  }
-
-  private asArray<T>(v: T | T[] | undefined): T[] {
-    if (!v) return [];
-    return Array.isArray(v) ? v : [v];
-  }
-
-  private extractAttribute(categories: any[], domain: string): string | null {
-    const attribute = categories.find(c => c['@_domain'] === domain);
-    if (attribute && attribute['#text']) {
-      return decodeURIComponent(attribute['#text'].toString().trim());
-    }
-    return null;
-  }
-
-  private reset(): void {
-    this.errors = [];
-    this.warnings = [];
-    this.processed = 0;
-    this.created = 0;
-    this.updated = 0;
-  }
-
-  private async createAllVariants(product: any, item: WXRItem, options: WPImportOptions): Promise<void> {
-    const cats = this.asArray(item.category).filter(c => c && typeof c === 'object');
-    
-    // Extract all colors and sizes
-    const colors: string[] = [];
-    const sizes: string[] = [];
-    
-    for (const cat of cats) {
-      const domain = cat['@_domain'];
-      const value = cat['#text'];
-      
-      if (domain === 'pa_cvet' && value) {
-        colors.push(decodeURIComponent(value.toString().trim()));
-      } else if (domain === 'pa_razmer' && value) {
-        sizes.push(decodeURIComponent(value.toString().trim()));
-      }
+      return;
     }
 
-    // Create all combinations
+    // Create all combinations of colors and sizes
     const combinations: { color?: string; size?: string }[] = [];
     
     if (colors.length > 0 && sizes.length > 0) {
@@ -348,12 +382,13 @@ export class WPXMLImporter {
     // Create variants for each combination
     for (const combination of combinations) {
       const variantSku = this.generateVariantSKU(product.sku, combination.color, combination.size);
+      const variantPrice = this.getVariantPrice(variantPrices, combination);
       
       const variantData = {
         productId: product.id,
         color: combination.color || null,
         size: combination.size || null,
-        price: product.price, // Use base product price for now
+        price: variantPrice,
         stock: product.stock,
         sku: variantSku,
         isActive: true,
@@ -373,10 +408,11 @@ export class WPXMLImporter {
             where: { id: existingVariant.id },
             data: variantData
           });
+          this.warnings.push(`Вариация товара "${product.title}" обновлена`);
         }
       } else {
         await db.productVariant.create({ data: variantData });
-        this.warnings.push(`Создана вариация ${combination.color || 'без цвета'} ${combination.size || 'без размера'} для "${product.title}"`);
+        this.variantsCreated++;
       }
     }
   }
@@ -388,16 +424,38 @@ export class WPXMLImporter {
     return variantSku;
   }
 
+  private getVariantPrice(variantPrices: VariantPrice[], combination: { color?: string; size?: string }): number {
+    // For now, use the first available price or base price
+    // In a more sophisticated implementation, you could match prices to specific combinations
+    if (variantPrices.length > 0) {
+      return variantPrices[0].price;
+    }
+    return 0;
+  }
+
+  private asArray<T>(v: T | T[] | undefined): T[] {
+    if (!v) return [];
+    return Array.isArray(v) ? v : [v];
+  }
+
+  private reset(): void {
+    this.errors = [];
+    this.warnings = [];
+    this.processed = 0;
+    this.created = 0;
+    this.updated = 0;
+    this.variantsCreated = 0;
+  }
+
   private getResult(): ImportResult {
     return {
       success: this.errors.length === 0,
       processed: this.processed,
       created: this.created,
       updated: this.updated,
+      variantsCreated: this.variantsCreated,
       errors: this.errors,
       warnings: this.warnings,
     };
   }
 }
-
-

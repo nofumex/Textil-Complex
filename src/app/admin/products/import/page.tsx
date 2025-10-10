@@ -92,6 +92,11 @@ export default function ImportProductsPage() {
             <Upload className="h-4 w-4 mr-2" />
             {loading ? 'Обработка...' : validateOnly ? 'Проверить CSV' : 'Импортировать'}
           </Button>
+          <Button variant="outline" asChild>
+            <Link href="/admin/products/import-variants">
+              Импорт с вариациями
+            </Link>
+          </Button>
         </div>
 
         {result && (

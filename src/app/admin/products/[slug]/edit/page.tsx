@@ -8,6 +8,7 @@ import { Product, ProductVisibility } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/toast';
+import ProductVariantsManager from '@/components/admin/product-variants-manager';
 import { 
   ArrowLeft, 
   Save, 
@@ -52,6 +53,8 @@ export default function EditProductPage({ params }: PageProps) {
   const [categories, setCategories] = useState<any[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [formError, setFormError] = useState<string | null>(null);
+  const [variants, setVariants] = useState<any[]>([]);
+  const [loadingVariants, setLoadingVariants] = useState(true);
   const discountPercent = useMemo(() => {
     if (!formData.price || !formData.oldPrice) return null;
     const p = Number(formData.price);
@@ -120,6 +123,32 @@ export default function EditProductPage({ params }: PageProps) {
     };
     loadCategories();
   }, [toastError]);
+
+  useEffect(() => {
+    const loadVariants = async () => {
+      try {
+        setLoadingVariants(true);
+        const response = await fetch(`/api/admin/products/${params.slug}/variants`, {
+          credentials: 'include',
+        });
+        const result = await response.json();
+        if (result.success) {
+          setVariants(result.data);
+        } else {
+          toastError('Ошибка', 'Не удалось загрузить вариации товара');
+        }
+      } catch (error) {
+        console.error('Error loading variants:', error);
+        toastError('Ошибка', 'Не удалось загрузить вариации товара');
+      } finally {
+        setLoadingVariants(false);
+      }
+    };
+    
+    if (params.slug) {
+      loadVariants();
+    }
+  }, [params.slug, toastError]);
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -401,6 +430,22 @@ export default function EditProductPage({ params }: PageProps) {
             </div>
           </div>
           {formError && <div className="text-red-600 text-sm mt-4">{formError}</div>}
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Вариации товара</h2>
+          {loadingVariants ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-gray-600">Загрузка вариаций...</p>
+            </div>
+          ) : (
+            <ProductVariantsManager
+              productSlug={params.slug}
+              initialVariants={variants}
+              onVariantsUpdate={setVariants}
+            />
+          )}
         </div>
       </form>
     </div>
