@@ -127,10 +127,24 @@ export const FeaturedProducts: React.FC = () => {
                     {product.material}
                   </p>
 
-                  {/* Price */}
+                  {/* Price (min — max if variants) */}
                   <div className="flex items-center space-x-2 mb-4">
                     <span className="text-xl font-bold text-gray-900">
-                      {formatPrice(Number(product.price))}
+                      {(() => {
+                        const prices: number[] = [];
+                        if (product.price != null) prices.push(Number(product.price));
+                        if (Array.isArray(product.variants) && product.variants.length > 0) {
+                          for (const v of product.variants) {
+                            if (v && v.price != null) prices.push(Number(v.price));
+                          }
+                        }
+                        if (prices.length === 0) return formatPrice(0);
+                        const min = Math.min(...prices);
+                        const max = Math.max(...prices);
+                        return min === max
+                          ? formatPrice(min)
+                          : `${formatPrice(min)} — ${formatPrice(max)}`;
+                      })()}
                     </span>
                     {product.oldPrice && (
                       <span className="text-sm text-gray-500 line-through">

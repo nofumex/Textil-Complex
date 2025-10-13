@@ -444,6 +444,7 @@ export default function EditProductPage({ params }: PageProps) {
               productSlug={params.slug}
               initialVariants={variants}
               onVariantsUpdate={setVariants}
+              baseSku={productData?.sku}
             />
           )}
         </div>

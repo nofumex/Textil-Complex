@@ -40,7 +40,13 @@ export default function CartPage() {
                   </div>
                   <div>
                     <div className="font-medium">{item.product.title}</div>
-                    <div className="text-sm text-gray-600">{item.product.material || ''} {item.product.dimensions ? `• ${item.product.dimensions}` : ''}</div>
+                    {(item.selectedColor || item.selectedSize) && (
+                      <div className="text-sm text-gray-600">
+                        {item.selectedColor && <span>Цвет: {item.selectedColor}</span>}
+                        {item.selectedColor && item.selectedSize && <span>, </span>}
+                        {item.selectedSize && <span>Размер: {item.selectedSize}</span>}
+                      </div>
+                    )}
                     <div className="text-sm text-gray-500">Цена: {currency(item.price)}</div>
                   </div>
                 </div>

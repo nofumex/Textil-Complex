@@ -11,8 +11,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { slug } = params;
     const { searchParams } = new URL(request.url);
-    const color = searchParams.get('color');
-    const size = searchParams.get('size');
+    const color = searchParams.get('color') || undefined;
+    const size = searchParams.get('size') || undefined;
 
     // Find product by slug
     const product = await db.product.findUnique({
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Find matching variant
     const variant = product.variants.find(v => {
-      const colorMatch = !color || v.color === color;
+      const colorMatch = !color || (v.color || '').toLowerCase() === color.toLowerCase();
       const sizeMatch = !size || v.size === size;
       return colorMatch && sizeMatch;
     });

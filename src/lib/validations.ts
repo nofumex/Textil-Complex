@@ -89,6 +89,8 @@ export const productVariantSchema = z.object({
   stock: z.number().min(0, 'Количество не может быть отрицательным'),
   sku: z.string().min(1, 'Артикул обязателен'),
   isActive: z.boolean().default(true),
+  // Accept both absolute URLs and relative upload paths
+  imageUrl: z.string().min(1).optional(),
 });
 
 // Category validations

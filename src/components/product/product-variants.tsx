@@ -7,58 +7,82 @@ interface ProductVariantsProps {
   variants: ProductVariant[];
   basePrice: number;
   productSlug: string;
-  onVariantChange: (variant: ProductVariant | null, price: number) => void;
+  productId: string;
+  onVariantChange: (variant: ProductVariant | null, price: number, imageUrl?: string) => void;
 }
 
 export const ProductVariants: React.FC<ProductVariantsProps> = ({
   variants,
   basePrice,
   productSlug,
+  productId,
   onVariantChange,
 }) => {
   const [selectedColor, setSelectedColor] = useState<string>('');
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [currentPrice, setCurrentPrice] = useState<number>(basePrice);
+  const [currentImage, setCurrentImage] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
 
-  // Get unique colors and sizes from variants
-  // Filter out category-like values that shouldn't be displayed as colors
-  const colors = Array.from(new Set(
-    variants
-      .map(v => v.color)
-      .filter(Boolean)
-      .filter(color => {
-        // Exclude category-like values that are not actual colors
-        const categoryKeywords = ['пестротканное', 'пестротканые', 'гладкокрашеное', 'гладкокрашеные'];
-        return !categoryKeywords.some(keyword => 
-          color.toLowerCase().includes(keyword.toLowerCase())
-        );
-      })
-  ));
+  // Get unique colors and sizes from variants (preserve original labels, compare case-insensitively)
+  const isExcludedColor = (val: string) => {
+    const categoryKeywords = ['пестротканное', 'пестротканые', 'гладкокрашеное', 'гладкокрашеные'];
+    return categoryKeywords.some(keyword => val.toLowerCase().includes(keyword.toLowerCase()));
+  };
+  const colorLabelByNorm = new Map<string, string>();
+  for (const v of variants) {
+    const c = v.color?.trim();
+    if (!c) continue;
+    if (isExcludedColor(c)) continue;
+    const norm = c.toLowerCase();
+    if (!colorLabelByNorm.has(norm)) colorLabelByNorm.set(norm, c);
+  }
+  const colors = Array.from(colorLabelByNorm.values());
   const sizes = Array.from(new Set(variants.map(v => v.size).filter(Boolean)));
 
   // Find current variant based on selections
   const currentVariant = variants.find(v => {
-    // Handle case where color might be filtered out but still exists in variant
-    const variantColor = v.color;
-    const isColorValid = !variantColor || colors.includes(variantColor);
-    
+    const variantColor = (v.color || '').toLowerCase();
+    const normalizedSelectedColor = selectedColor.toLowerCase();
     if (selectedColor && selectedSize) {
-      return variantColor === selectedColor && v.size === selectedSize;
+      return variantColor === normalizedSelectedColor && v.size === selectedSize;
     } else if (selectedColor && !selectedSize) {
-      return variantColor === selectedColor && isColorValid;
+      return variantColor === normalizedSelectedColor;
     } else if (!selectedColor && selectedSize) {
-      return v.size === selectedSize && isColorValid;
+      return v.size === selectedSize;
     }
     return false;
   });
 
-  // Update price when variant changes
-  useEffect(() => {
-    const price = currentVariant ? Number(currentVariant.price) : basePrice;
-    setCurrentPrice(price);
-    onVariantChange(currentVariant || null, price);
-  }, [currentVariant, basePrice, onVariantChange]);
+  // Function to fetch variant data from API
+  const fetchVariantData = async (color: string, size: string) => {
+    if (!color && !size) return;
+    
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (color) params.append('color', color);
+      if (size) params.append('size', size);
+      const response = await fetch(`/api/products/${productSlug}/variant?${params}`);
+      if (response.ok) {
+        const json = await response.json();
+        const payload = json?.data;
+        if (payload?.price != null) setCurrentPrice(payload.price);
+        if (payload?.variant) {
+          const image = payload.variant.imageUrl || '';
+          if (image) setCurrentImage(image);
+          onVariantChange(payload.variant, payload.price, image || undefined);
+        } else {
+          onVariantChange(null, payload?.price ?? currentPrice, undefined);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при получении данных вариации:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Auto-select first available options if only one of each
   useEffect(() => {
@@ -79,13 +103,19 @@ export const ProductVariants: React.FC<ProductVariantsProps> = ({
     setSelectedColor(color);
     // Reset size if the selected size is not available for this color
     const availableSizes = variants
-      .filter(v => v.color === color)
+      .filter(v => (v.color || '').toLowerCase() === color.toLowerCase())
       .map(v => v.size)
       .filter(Boolean);
     
     if (selectedSize && !availableSizes.includes(selectedSize)) {
       setSelectedSize('');
     }
+    
+    // Fetch variant image/price preferably with both color+current size if selected, otherwise with first available size for this color
+    const sizeForRequest = selectedSize && availableSizes.includes(selectedSize)
+      ? selectedSize
+      : (availableSizes[0] || '');
+    fetchVariantData(color, sizeForRequest);
   };
 
   const handleSizeChange = (size: string) => {
@@ -93,39 +123,37 @@ export const ProductVariants: React.FC<ProductVariantsProps> = ({
     // Reset color if the selected color is not available for this size
     const availableColors = variants
       .filter(v => v.size === size)
-      .map(v => v.color)
+      .map(v => (v.color || '').toLowerCase())
       .filter(Boolean);
     
-    if (selectedColor && !availableColors.includes(selectedColor)) {
+    if (selectedColor && !availableColors.includes(selectedColor.toLowerCase())) {
       setSelectedColor('');
     }
+    
+    // Fetch variant data
+    fetchVariantData(selectedColor, size);
+  };
+
+  const handleResetSelection = () => {
+    setSelectedColor('');
+    setSelectedSize('');
+    setCurrentPrice(basePrice);
+    setCurrentImage('');
+    onVariantChange(null, basePrice, undefined);
   };
 
   const getAvailableSizes = () => {
     if (!selectedColor) return sizes;
     return variants
-      .filter(v => v.color === selectedColor)
+      .filter(v => (v.color || '').toLowerCase() === selectedColor.toLowerCase())
       .map(v => v.size)
       .filter(Boolean);
   };
 
-  const getAvailableColors = () => {
-    if (!selectedSize) return colors;
-    return variants
-      .filter(v => v.size === selectedSize)
-      .map(v => v.color)
-      .filter(Boolean)
-      .filter(color => {
-        // Apply same filtering as in colors array
-        const categoryKeywords = ['пестротканное', 'пестротканые', 'гладкокрашеное', 'гладкокрашеные'];
-        return !categoryKeywords.some(keyword => 
-          color.toLowerCase().includes(keyword.toLowerCase())
-        );
-      });
-  };
+  const getAvailableColors = () => colors;
 
   const isVariantInStock = (color: string, size: string) => {
-    const variant = variants.find(v => v.color === color && v.size === size);
+    const variant = variants.find(v => (v.color || '').toLowerCase() === color.toLowerCase() && v.size === size);
     return variant ? variant.stock > 0 : false;
   };
 
@@ -151,11 +179,10 @@ export const ProductVariants: React.FC<ProductVariantsProps> = ({
           <h3 className="text-sm font-medium text-gray-900 mb-3">Цвет</h3>
           <div className="flex flex-wrap gap-2">
             {getAvailableColors().map((color) => {
-              const availableSizesForColor = variants
-                .filter(v => v.color === color)
-                .map(v => v.size)
-                .filter(Boolean);
-              const hasStock = availableSizesForColor.some(size => isVariantInStock(color, size));
+              // Keep stable color order; compute availability dynamically
+              const hasStock = selectedSize
+                ? variants.some(v => (v.color || '').toLowerCase() === color.toLowerCase() && v.size === selectedSize && v.stock > 0)
+                : variants.some(v => (v.color || '').toLowerCase() === color.toLowerCase() && v.stock > 0);
               
               return (
                 <button
@@ -188,8 +215,7 @@ export const ProductVariants: React.FC<ProductVariantsProps> = ({
               const inStock = selectedColor 
                 ? isVariantInStock(selectedColor, size)
                 : isVariantInStockForSize(size);
-              const variantPrice = getVariantPrice(selectedColor, size);
-              const priceDiff = variantPrice - basePrice;
+              // no price delta display per request
               
               return (
                 <button
@@ -206,14 +232,6 @@ export const ProductVariants: React.FC<ProductVariantsProps> = ({
                 >
                   <div className="text-center">
                     <div className="font-medium">{size}</div>
-                    {priceDiff !== 0 && (
-                      <div className="text-xs text-gray-500">
-                        {priceDiff > 0 ? '+' : ''}{new Intl.NumberFormat('ru-RU', { 
-                          style: 'currency', 
-                          currency: 'RUB' 
-                        }).format(priceDiff)}
-                      </div>
-                    )}
                   </div>
                 </button>
               );
@@ -225,44 +243,30 @@ export const ProductVariants: React.FC<ProductVariantsProps> = ({
       {/* Price Display */}
       <div className="flex items-baseline space-x-3">
         <span className="text-3xl font-bold text-gray-900">
-          {new Intl.NumberFormat('ru-RU', { 
-            style: 'currency', 
-            currency: 'RUB' 
-          }).format(currentPrice)}
-        </span>
-        {currentPrice !== basePrice && (
-          <span className="text-lg text-gray-500">
-            (базовая цена: {new Intl.NumberFormat('ru-RU', { 
+          {isLoading ? (
+            <span className="animate-pulse">Загрузка...</span>
+          ) : (
+            new Intl.NumberFormat('ru-RU', { 
               style: 'currency', 
               currency: 'RUB' 
-            }).format(basePrice)})
-          </span>
-        )}
+            }).format(currentPrice)
+          )}
+        </span>
+      </div>
+
+      {/* Reset Selection */}
+      <div>
+        <button
+          type="button"
+          onClick={handleResetSelection}
+          className="inline-flex items-center px-3 py-1.5 rounded-md border border-gray-300 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          Сбросить выбор
+        </button>
       </div>
 
       {/* Stock Status */}
-      {currentVariant ? (
-        <div className="text-sm">
-          {currentVariant.stock > 0 ? (
-            <span className="text-green-600">
-              В наличии: {currentVariant.stock} шт.
-            </span>
-          ) : (
-            <span className="text-red-600">Нет в наличии</span>
-          )}
-        </div>
-      ) : colors.length === 0 && sizes.length > 0 ? (
-        // Show stock status for size-only variants
-        <div className="text-sm">
-          {variants.some(v => v.stock > 0) ? (
-            <span className="text-green-600">
-              В наличии: {variants.reduce((sum, v) => sum + v.stock, 0)} шт.
-            </span>
-          ) : (
-            <span className="text-red-600">Нет в наличии</span>
-          )}
-        </div>
-      ) : null}
+      {/* Stock indicator moved to specs on the right column; keep minimal status here if needed */}
     </div>
   );
 };
