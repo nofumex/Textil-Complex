@@ -46,6 +46,15 @@ export async function GET(_req: NextRequest) {
       address: raw.address || DEFAULTS.address,
       socialLinks: Array.isArray(raw.socialLinks) ? raw.socialLinks : DEFAULTS.socialLinks,
       extraContacts: Array.isArray(raw.extraContacts) ? raw.extraContacts : DEFAULTS.extraContacts,
+      photoPricesUrl: raw.photoPricesUrl || '',
+      popupEnabled: Boolean(raw.popupEnabled),
+      popupTemplate: raw.popupTemplate || 'center',
+      popupTitle: raw.popupTitle || '',
+      popupText: raw.popupText || '',
+      popupImageUrl: raw.popupImageUrl || '',
+      popupButtonLabel: raw.popupButtonLabel || '',
+      popupButtonUrl: raw.popupButtonUrl || '',
+      popupDelaySeconds: typeof raw.popupDelaySeconds === 'number' ? raw.popupDelaySeconds : Number(raw.popupDelaySeconds || 3),
     };
 
     return NextResponse.json({ success: true, data: normalized });

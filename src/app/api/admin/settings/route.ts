@@ -117,6 +117,15 @@ export async function GET(request: NextRequest) {
           ].filter(Boolean) as { label: string; url: string }[]
         : DEFAULTS.socialLinks,
       extraContacts: Array.isArray(rawObject.extraContacts) ? rawObject.extraContacts : DEFAULTS.extraContacts,
+      photoPricesUrl: rawObject.photoPricesUrl || '',
+      popupEnabled: Boolean(rawObject.popupEnabled),
+      popupTemplate: rawObject.popupTemplate || 'center',
+      popupTitle: rawObject.popupTitle || '',
+      popupText: rawObject.popupText || '',
+      popupImageUrl: rawObject.popupImageUrl || '',
+      popupButtonLabel: rawObject.popupButtonLabel || '',
+      popupButtonUrl: rawObject.popupButtonUrl || '',
+      popupDelaySeconds: typeof rawObject.popupDelaySeconds === 'number' ? rawObject.popupDelaySeconds : Number(rawObject.popupDelaySeconds || 3),
     };
 
     console.log('Settings API: Returning normalized data');
@@ -240,6 +249,15 @@ export async function PUT(request: NextRequest) {
           ].filter(Boolean) as { label: string; url: string }[]
         : DEFAULTS.socialLinks,
       extraContacts: Array.isArray(rawObject.extraContacts) ? rawObject.extraContacts : DEFAULTS.extraContacts,
+      photoPricesUrl: rawObject.photoPricesUrl || '',
+      popupEnabled: Boolean(rawObject.popupEnabled),
+      popupTemplate: rawObject.popupTemplate || 'center',
+      popupTitle: rawObject.popupTitle || '',
+      popupText: rawObject.popupText || '',
+      popupImageUrl: rawObject.popupImageUrl || '',
+      popupButtonLabel: rawObject.popupButtonLabel || '',
+      popupButtonUrl: rawObject.popupButtonUrl || '',
+      popupDelaySeconds: typeof rawObject.popupDelaySeconds === 'number' ? rawObject.popupDelaySeconds : Number(rawObject.popupDelaySeconds || 3),
     };
 
     return NextResponse.json({ success: true, data: normalized, message: 'Настройки обновлены успешно' });

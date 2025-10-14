@@ -31,9 +31,9 @@ export const ProductActions: React.FC<ProductActionsProps> = ({
   const handleAddToCart = async () => {
     if (!canBuy) return;
     
-    // Check if variant selection is required
+    // Check if variant selection is required - enforce for ALL products with variants
     if (product.variants && product.variants.length > 0 && !selectedVariant) {
-      error('Выберите вариант', 'Пожалуйста, выберите цвет и размер товара');
+      error('Выберите вариант', 'Пожалуйста, выберите вариант товара перед добавлением в корзину');
       return;
     }
 
@@ -58,9 +58,9 @@ export const ProductActions: React.FC<ProductActionsProps> = ({
   const handleBuyNow = async () => {
     if (!canBuy) return;
     
-    // Check if variant selection is required
+    // Check if variant selection is required - enforce for ALL products with variants
     if (product.variants && product.variants.length > 0 && !selectedVariant) {
-      error('Выберите вариант', 'Пожалуйста, выберите цвет и размер товара');
+      error('Выберите вариант', 'Пожалуйста, выберите вариант товара перед покупкой');
       return;
     }
 

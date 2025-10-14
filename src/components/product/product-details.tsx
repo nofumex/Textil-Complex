@@ -101,17 +101,32 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
 
           {/* Product Description */}
           <div className="prose max-w-none mb-6">
-            {product.description && (
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Описание</h3>
-                <p className="text-gray-700 leading-relaxed">{product.description}</p>
-              </div>
-            )}
-            {product.content && (
-              <div className="text-gray-700 leading-relaxed">
-                <div dangerouslySetInnerHTML={{ __html: product.content }} />
-              </div>
-            )}
+            {(() => {
+              const desc = (product.description || '').trim();
+              const html = (product.content || '').trim();
+              const htmlText = html
+                ? html
+                    .replace(/<[^>]+>/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                : '';
+              const isDuplicate = desc && htmlText && htmlText.includes(desc);
+              return (
+                <>
+                  {desc && !isDuplicate && (
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">Описание</h3>
+                      <p className="text-gray-700 leading-relaxed">{desc}</p>
+                    </div>
+                  )}
+                  {html && (
+                    <div className="text-gray-700 leading-relaxed">
+                      <div dangerouslySetInnerHTML={{ __html: html }} />
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
 
           {/* Product Specifications */}

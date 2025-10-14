@@ -6,6 +6,7 @@ import { Footer } from '@/components/layout/footer';
 import { CartDrawer } from '@/components/cart/cart-drawer';
 import { ToastProvider } from '@/components/ui/toast';
 import { BackToTop } from '@/components/ui/back-to-top';
+import { SitePopup } from '@/components/ui/site-popup';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] });
 
@@ -61,6 +62,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ToastProvider>
           <Header />
+          <SitePopup />
           {children}
           <Footer />
           <CartDrawer />

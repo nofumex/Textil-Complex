@@ -25,6 +25,10 @@ export const Header: React.FC = () => {
   const navigation = [
     { name: 'Главная', href: '/' },
     { name: 'Каталог', href: '/catalog' },
+    // External link: Фотопрайсы (Google Drive)
+    ...(publicSettings?.photoPricesUrl
+      ? [{ name: 'Фотопрайсы', href: publicSettings.photoPricesUrl }]
+      : [] as { name: string; href: string }[]),
     { name: 'О компании', href: '/about' },
     { name: 'Доставка', href: '/delivery' },
     { name: 'Отзывы', href: '/reviews' },
@@ -172,12 +176,23 @@ export const Header: React.FC = () => {
           <ul className="flex space-x-8">
             {navigation.map((item) => (
               <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
-                >
-                  {item.name}
-                </Link>
+                {item.href.startsWith('http') ? (
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
+                  >
+                    {item.name}
+                  </a>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className="text-gray-700 hover:text-primary-600 font-medium transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
@@ -212,14 +227,27 @@ export const Header: React.FC = () => {
             {/* Mobile navigation */}
             <nav className="space-y-2">
               {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="block py-2 text-gray-700 hover:text-primary-600 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
+                item.href.startsWith('http') ? (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block py-2 text-gray-700 hover:text-primary-600 font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </a>
+                ) : (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className="block py-2 text-gray-700 hover:text-primary-600 font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                )
               ))}
             </nav>
 

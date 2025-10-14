@@ -24,6 +24,15 @@ export default function SettingsPage() {
     address: '',
     socialLinks: [] as { label: string; url: string }[],
     extraContacts: [] as { title: string; values: string[] }[],
+    photoPricesUrl: '',
+    popupEnabled: false,
+    popupTemplate: 'center',
+    popupTitle: '',
+    popupText: '',
+    popupImageUrl: '',
+    popupButtonLabel: '',
+    popupButtonUrl: '',
+    popupDelaySeconds: 3,
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -420,6 +429,171 @@ export default function SettingsPage() {
           <Button variant="outline" onClick={addSocial}>Добавить соцсеть</Button>
         </CardContent>
       </Card>
+
+      {/* External links */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Внешние ссылки</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ссылка на Фотопрайсы (Google Drive)</label>
+            <Input
+              value={settings.photoPricesUrl || ''}
+              onChange={(e) => handleInputChange('photoPricesUrl', e.target.value)}
+              placeholder="https://drive.google.com/..."
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Site popup */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Всплывающее окно</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-3">
+            <input
+              id="popupEnabled"
+              type="checkbox"
+              checked={!!settings.popupEnabled}
+              onChange={(e) => handleInputChange('popupEnabled', e.target.checked)}
+            />
+            <label htmlFor="popupEnabled" className="text-sm text-gray-700">Включить всплывающее окно</label>
+          </div>
+          {settings.popupEnabled && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Шаблон всплывающего окна</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                  settings.popupTemplate === 'center' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`} onClick={() => handleInputChange('popupTemplate', 'center')}>
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-gray-300 rounded"></div>
+                    </div>
+                    <h4 className="font-medium text-sm">По центру</h4>
+                    <p className="text-xs text-gray-500 mt-1">Изображение сверху, текст снизу</p>
+                  </div>
+                </div>
+                <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                  settings.popupTemplate === 'image-right' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`} onClick={() => handleInputChange('popupTemplate', 'image-right')}>
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-lg flex items-center justify-between p-2">
+                      <div className="w-6 h-6 bg-gray-300 rounded"></div>
+                      <div className="w-4 h-4 bg-gray-300 rounded"></div>
+                    </div>
+                    <h4 className="font-medium text-sm">Изображение справа</h4>
+                    <p className="text-xs text-gray-500 mt-1">Текст слева, изображение справа</p>
+                  </div>
+                </div>
+                <div className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                  settings.popupTemplate === 'image-left' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`} onClick={() => handleInputChange('popupTemplate', 'image-left')}>
+                  <div className="text-center">
+                    <div className="w-16 h-16 mx-auto mb-2 bg-gray-100 rounded-lg flex items-center justify-between p-2">
+                      <div className="w-4 h-4 bg-gray-300 rounded"></div>
+                      <div className="w-6 h-6 bg-gray-300 rounded"></div>
+                    </div>
+                    <h4 className="font-medium text-sm">Изображение слева</h4>
+                    <p className="text-xs text-gray-500 mt-1">Изображение слева, текст справа</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Заголовок</label>
+              <Input value={settings.popupTitle || ''} onChange={(e) => handleInputChange('popupTitle', e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Задержка показа (секунды)</label>
+              <Input type="number" value={settings.popupDelaySeconds || 3} onChange={(e) => handleInputChange('popupDelaySeconds', Number(e.target.value))} />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Текст</label>
+            <textarea
+              value={settings.popupText || ''}
+              onChange={(e) => handleInputChange('popupText', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md min-h-[100px]"
+              placeholder="Текст всплывающего окна"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Картинка (необязательно)</label>
+            <div className="flex items-center gap-4">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  
+                  setUploading(true);
+                  try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    const uploadResponse = await fetch('/api/upload', {
+                      method: 'POST',
+                      credentials: 'include',
+                      body: formData,
+                    });
+                    
+                    const uploadResult = await uploadResponse.json();
+                    if (uploadResult.success) {
+                      handleInputChange('popupImageUrl', uploadResult.path);
+                      setMessage('Изображение загружено');
+                      setTimeout(() => setMessage(''), 3000);
+                    } else {
+                      setMessage(`Ошибка загрузки: ${uploadResult.error}`);
+                    }
+                  } catch (error) {
+                    setMessage('Ошибка при загрузке изображения');
+                  } finally {
+                    setUploading(false);
+                    (e.target as HTMLInputElement).value = '';
+                  }
+                }}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                disabled={uploading}
+              />
+              {settings.popupImageUrl && (
+                <div className="flex items-center gap-2">
+                  <img src={settings.popupImageUrl} alt="Preview" className="w-16 h-16 object-cover rounded border" />
+                  <button
+                    onClick={() => handleInputChange('popupImageUrl', '')}
+                    className="text-red-600 hover:text-red-700 text-sm"
+                  >
+                    Удалить
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Кнопка: надпись</label>
+              <Input value={settings.popupButtonLabel || ''} onChange={(e) => handleInputChange('popupButtonLabel', e.target.value)} placeholder="Например: Открыть" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Кнопка: ссылка</label>
+              <Input value={settings.popupButtonUrl || ''} onChange={(e) => handleInputChange('popupButtonUrl', e.target.value)} placeholder="https://... или /catalog" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
 
       {/* Hero Images */}
       <Card>

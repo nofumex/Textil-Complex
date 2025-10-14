@@ -187,6 +187,19 @@ export const settingsSchema = z.object({
     )
     .default([]),
 
+  // Custom: external links
+  photoPricesUrl: z.string().url('Некорректная ссылка').optional(),
+
+  // Popup configuration
+  popupEnabled: z.boolean().default(false),
+  popupTemplate: z.enum(['center', 'image-right', 'image-left']).default('center'),
+  popupTitle: z.string().optional(),
+  popupText: z.string().optional(),
+  popupImageUrl: z.string().optional(),
+  popupButtonLabel: z.string().optional(),
+  popupButtonUrl: z.string().optional(),
+  popupDelaySeconds: z.coerce.number().min(0).default(3),
+
   // Legacy/optional fields kept for backward compatibility (ignored by UI)
   siteName: z.string().optional(),
   siteDescription: z.string().optional(),
