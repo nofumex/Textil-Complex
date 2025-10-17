@@ -147,6 +147,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       current: pathname.startsWith('/admin/leads'),
     },
     {
+      name: 'Категории',
+      href: '/admin/categories',
+      icon: Package,
+      current: pathname.startsWith('/admin/categories'),
+    },
+    {
       name: 'Аналитика',
       href: '/admin/analytics',
       icon: BarChart3,

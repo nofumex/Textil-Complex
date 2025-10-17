@@ -126,6 +126,14 @@ export async function GET(request: NextRequest) {
       popupButtonLabel: rawObject.popupButtonLabel || '',
       popupButtonUrl: rawObject.popupButtonUrl || '',
       popupDelaySeconds: typeof rawObject.popupDelaySeconds === 'number' ? rawObject.popupDelaySeconds : Number(rawObject.popupDelaySeconds || 3),
+      emailSettings: rawObject.emailSettings || {
+        smtpHost: rawObject.SMTP_HOST || '',
+        smtpPort: Number(rawObject.SMTP_PORT || 587),
+        smtpUser: rawObject.SMTP_USER || '',
+        smtpPassword: rawObject.SMTP_PASSWORD || '',
+        fromEmail: rawObject.fromEmail || rawObject.FROM_EMAIL || '',
+        companyEmail: rawObject.companyEmail || 'za-bol@yandex.ru',
+      },
     };
 
     console.log('Settings API: Returning normalized data');
@@ -133,7 +141,12 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Get settings error:', error);
-    
+    if ((error as any)?.statusCode === 401 || (error as any)?.name === 'AuthError') {
+      return NextResponse.json(
+        { success: false, error: 'Не авторизовано' },
+        { status: 401 }
+      );
+    }
     return NextResponse.json(
       { success: false, error: 'Ошибка получения настроек', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
@@ -143,8 +156,8 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    // Verify admin role
-    await verifyRole(request, ['ADMIN']);
+    // Allow ADMIN and MANAGER to update settings
+    await verifyRole(request, ['ADMIN', 'MANAGER']);
 
     const body = await request.json();
     
@@ -258,13 +271,26 @@ export async function PUT(request: NextRequest) {
       popupButtonLabel: rawObject.popupButtonLabel || '',
       popupButtonUrl: rawObject.popupButtonUrl || '',
       popupDelaySeconds: typeof rawObject.popupDelaySeconds === 'number' ? rawObject.popupDelaySeconds : Number(rawObject.popupDelaySeconds || 3),
+      emailSettings: rawObject.emailSettings || {
+        smtpHost: rawObject.SMTP_HOST || '',
+        smtpPort: Number(rawObject.SMTP_PORT || 587),
+        smtpUser: rawObject.SMTP_USER || '',
+        smtpPassword: rawObject.SMTP_PASSWORD || '',
+        fromEmail: rawObject.fromEmail || rawObject.FROM_EMAIL || '',
+        companyEmail: rawObject.companyEmail || 'za-bol@yandex.ru',
+      },
     };
 
     return NextResponse.json({ success: true, data: normalized, message: 'Настройки обновлены успешно' });
 
   } catch (error) {
     console.error('Update settings error:', error);
-    
+    if ((error as any)?.statusCode === 401 || (error as any)?.name === 'AuthError') {
+      return NextResponse.json(
+        { success: false, error: 'Не авторизовано' },
+        { status: 401 }
+      );
+    }
     if (error instanceof Error && error.name === 'ZodError') {
       return NextResponse.json(
         { success: false, error: 'Некорректные данные настроек' },
@@ -323,7 +349,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Create setting error:', error);
-    
+    if ((error as any)?.statusCode === 401 || (error as any)?.name === 'AuthError') {
+      return NextResponse.json(
+        { success: false, error: 'Не авторизовано' },
+        { status: 401 }
+      );
+    }
     return NextResponse.json(
       { success: false, error: 'Ошибка создания настройки' },
       { status: 500 }

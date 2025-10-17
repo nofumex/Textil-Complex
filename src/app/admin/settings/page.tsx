@@ -33,6 +33,14 @@ export default function SettingsPage() {
     popupButtonLabel: '',
     popupButtonUrl: '',
     popupDelaySeconds: 3,
+    emailSettings: {
+      smtpHost: '',
+      smtpPort: 587,
+      smtpUser: '',
+      smtpPassword: '',
+      fromEmail: '',
+      companyEmail: 'za-bol@yandex.ru',
+    },
   });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -400,7 +408,45 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* Блоки доставки и email удалены по требованию */}
+      {/* Email Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Почтовые уведомления о заказах</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Host</label>
+              <Input value={settings.emailSettings?.smtpHost || ''} onChange={(e) => setSettings((p: any) => ({ ...p, emailSettings: { ...(p.emailSettings || {}), smtpHost: e.target.value } }))} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Port</label>
+              <Input type="number" value={settings.emailSettings?.smtpPort ?? 587} onChange={(e) => setSettings((p: any) => ({ ...p, emailSettings: { ...(p.emailSettings || {}), smtpPort: Number(e.target.value) } }))} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">SMTP User</label>
+              <Input value={settings.emailSettings?.smtpUser || ''} onChange={(e) => setSettings((p: any) => ({ ...p, emailSettings: { ...(p.emailSettings || {}), smtpUser: e.target.value } }))} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">SMTP Password</label>
+              <Input type="password" value={settings.emailSettings?.smtpPassword || ''} onChange={(e) => setSettings((p: any) => ({ ...p, emailSettings: { ...(p.emailSettings || {}), smtpPassword: e.target.value } }))} />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">От кого (from)</label>
+              <Input type="email" value={settings.emailSettings?.fromEmail || ''} onChange={(e) => setSettings((p: any) => ({ ...p, emailSettings: { ...(p.emailSettings || {}), fromEmail: e.target.value } }))} placeholder="noreply@domain.ru" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Почта компании для копии</label>
+              <Input type="email" value={settings.emailSettings?.companyEmail || 'za-bol@yandex.ru'} onChange={(e) => setSettings((p: any) => ({ ...p, emailSettings: { ...(p.emailSettings || {}), companyEmail: e.target.value } }))} placeholder="za-bol@yandex.ru" />
+            </div>
+          </div>
+          <p className="text-xs text-gray-500">Если не указано, используются переменные окружения SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASSWORD/FROM_EMAIL. Копия всегда отправляется на za-bol@yandex.ru, если поле пустое.</p>
+        </CardContent>
+      </Card>
 
       {/* Social Links */}
       <Card>

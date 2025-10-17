@@ -200,6 +200,19 @@ export const settingsSchema = z.object({
   popupButtonUrl: z.string().optional(),
   popupDelaySeconds: z.coerce.number().min(0).default(3),
 
+  // Email settings for order notifications
+  emailSettings: z
+    .object({
+      smtpHost: z.string().min(1, 'SMTP host обязателен').optional(),
+      smtpPort: z.coerce.number().optional(),
+      smtpUser: z.string().optional(),
+      smtpPassword: z.string().optional(),
+      fromEmail: z.string().email('Некорректный email').optional(),
+      companyEmail: z.string().email('Некорректный email').optional(),
+    })
+    .partial()
+    .optional(),
+
   // Legacy/optional fields kept for backward compatibility (ignored by UI)
   siteName: z.string().optional(),
   siteDescription: z.string().optional(),

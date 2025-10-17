@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { Prisma } from '@prisma/client';
 import { verifyAuth, verifyRole } from '@/lib/auth';
 import { checkoutSchema, orderFiltersSchema } from '@/lib/validations';
+import { renderOrderEmail, sendMail } from '@/lib/email';
 import { generateOrderNumber } from '@/lib/utils';
 
 export async function GET(request: NextRequest) {
@@ -334,30 +335,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Update product stock
-    for (const item of items) {
-      if (item.variantId) {
-        // Обновить остаток вариации
-        await db.productVariant.update({
-          where: { id: item.variantId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        });
-      } else {
-        // Обновить остаток основного товара
-        await db.product.update({
-          where: { id: item.productId },
-          data: {
-            stock: {
-              decrement: item.quantity,
-            },
-          },
-        });
-      }
-    }
+    // Не уменьшаем остатки при создании заказа — администратор управляет складом вручную
 
     // Create order log
     await db.orderLog.create({
@@ -369,7 +347,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // TODO: Send email notification
+    try {
+      const html = renderOrderEmail(order);
+      // Send to customer
+      if (order.email) {
+        await sendMail({ to: order.email, subject: `Заказ ${order.orderNumber} создан`, html });
+      }
+      // Send to company copy
+      const companyEmail = process.env.COMPANY_EMAIL || 'za-bol@yandex.ru';
+      await sendMail({ to: companyEmail, subject: `Новый заказ ${order.orderNumber}`, html });
+    } catch (mailErr) {
+      console.error('Order email send error:', mailErr);
+      // Do not fail order creation on email failure
+    }
 
     return NextResponse.json({
       success: true,
