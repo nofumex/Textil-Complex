@@ -1,17 +1,25 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Modal } from '@/components/ui/modal';
+import { useToast } from '@/components/ui/toast';
+import { Trash2, Eye } from 'lucide-react';
 
 export default function AdminLeadsPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [selectedLead, setSelectedLead] = useState<any | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { success, error: toastError } = useToast();
 
-  const refreshAuth = async (): Promise<boolean> => {
+  const refreshAuth = useCallback(async (): Promise<boolean> => {
     try {
       const res = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' });
       const json = await res.json();
@@ -19,9 +27,9 @@ export default function AdminLeadsPage() {
     } catch {
       return false;
     }
-  };
+  }, []);
 
-  const authorizedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+  const authorizedFetch = useCallback(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     const res = await fetch(input, { ...init, credentials: 'include' });
     if (res.status === 401) {
       const refreshed = await refreshAuth();
@@ -29,16 +37,37 @@ export default function AdminLeadsPage() {
       return fetch(input, { ...init, credentials: 'include' });
     }
     return res;
-  };
+  }, [refreshAuth]);
 
-  useEffect(() => {
-    const load = async () => {
+  const loadLeads = useCallback(async () => {
       try {
         setLoading(true);
-        const res = await authorizedFetch('/api/leads');
-        if (!res.ok) throw new Error('LOAD_FAILED');
-        const json = await res.json();
-        if (json.success) setLeads(json.data);
+        // Fetch all pages to include older leads
+        const firstRes = await authorizedFetch('/api/leads?page=1&limit=100');
+        if (!firstRes.ok) throw new Error('LOAD_FAILED');
+        const firstJson = await firstRes.json();
+        if (!firstJson?.success) throw new Error('LOAD_FAILED');
+
+        const pages = Number(firstJson?.pagination?.pages || 1);
+        const total = Number(firstJson?.pagination?.total || firstJson?.data?.length || 0);
+        const collected: any[] = Array.isArray(firstJson.data) ? [...firstJson.data] : [];
+
+        // Fetch remaining pages (if any)
+        if (pages > 1) {
+          const fetches: Promise<Response>[] = [];
+          for (let p = 2; p <= pages; p++) {
+            fetches.push(authorizedFetch(`/api/leads?page=${p}&limit=100`));
+          }
+          const results = await Promise.all(fetches);
+          for (const r of results) {
+            if (!r.ok) continue;
+            const j = await r.json();
+            if (j?.success && Array.isArray(j.data)) collected.push(...j.data);
+          }
+        }
+
+        setLeads(collected);
+        setTotalCount(total || collected.length);
       } catch (e: any) {
         if (e?.message === 'AUTH_REQUIRED') {
           window.location.href = '/login';
@@ -48,9 +77,52 @@ export default function AdminLeadsPage() {
       } finally {
         setLoading(false);
       }
+  }, [authorizedFetch]);
+
+  useEffect(() => {
+    loadLeads();
+  }, [loadLeads]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        loadLeads();
+      }
     };
-    load();
-  }, []);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [loadLeads]);
+
+  const openView = (lead: any) => {
+    setSelectedLead(lead);
+    setIsModalOpen(true);
+  };
+
+  const closeView = () => {
+    setIsModalOpen(false);
+    setSelectedLead(null);
+  };
+
+  const deleteLead = async (id: string) => {
+    const confirmed = window.confirm('Удалить эту заявку?');
+    if (!confirmed) return;
+    try {
+      setDeletingId(id);
+      const res = await authorizedFetch(`/api/leads/${id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (!res.ok || !json.success) throw new Error(json?.error || 'DELETE_FAILED');
+      setLeads((prev) => prev.filter((l) => l.id !== id));
+      success('Заявка удалена');
+    } catch (e: any) {
+      if (e?.message === 'AUTH_REQUIRED') {
+        window.location.href = '/login';
+      } else {
+        toastError('Не удалось удалить заявку');
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!search) return leads;
@@ -68,14 +140,19 @@ export default function AdminLeadsPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Заявки</h1>
-          <p className="text-gray-600">Всего: {leads.length}</p>
+          <p className="text-gray-600">Всего: {totalCount}</p>
         </div>
-        <div className="w-full md:w-80">
-          <Input
-            placeholder="Поиск по имени, email, телефону..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+        <div className="flex gap-3 w-full md:w-auto md:items-center">
+          <div className="w-full md:w-80">
+            <Input
+              placeholder="Поиск по имени, email, телефону..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Button onClick={loadLeads} disabled={loading}>
+            {loading ? 'Обновление...' : 'Обновить'}
+          </Button>
         </div>
       </div>
 
@@ -91,6 +168,7 @@ export default function AdminLeadsPage() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Компания</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Сообщение</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Источник</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -125,12 +203,63 @@ export default function AdminLeadsPage() {
                       {lead.source || '-'}
                     </span>
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-2">
+                    <Button variant="secondary" size="sm" onClick={() => openView(lead)}>
+                      <Eye className="w-4 h-4 mr-1" /> Полный текст
+                    </Button>
+                    <Button variant="destructive" size="sm" disabled={deletingId===lead.id} onClick={() => deleteLead(lead.id)}>
+                      <Trash2 className="w-4 h-4 mr-1" /> {deletingId===lead.id ? 'Удаление...' : 'Удалить'}
+                    </Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {/* View modal */}
+      <Modal isOpen={isModalOpen} onClose={closeView} title="Заявка">
+        {selectedLead && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <div className="text-xs uppercase text-gray-500">Имя</div>
+                <div className="text-gray-900">{selectedLead.name}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase text-gray-500">Компания</div>
+                <div className="text-gray-900">{selectedLead.company || '-'}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase text-gray-500">Телефон</div>
+                <div className="text-gray-900">{selectedLead.phone || '-'}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase text-gray-500">Email</div>
+                <div className="text-gray-900">{selectedLead.email || '-'}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase text-gray-500">Источник</div>
+                <div className="text-gray-900">{selectedLead.source || '-'}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase text-gray-500">Дата</div>
+                <div className="text-gray-900">{new Date(selectedLead.createdAt).toLocaleString('ru-RU')}</div>
+              </div>
+            </div>
+            <div>
+              <div className="text-xs uppercase text-gray-500 mb-1">Сообщение</div>
+              <div className="rounded border bg-gray-50 p-3 whitespace-pre-wrap text-gray-900 min-h-[80px]">
+                {selectedLead.message || '-'}
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={closeView}>Закрыть</Button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

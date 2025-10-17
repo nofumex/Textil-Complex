@@ -33,6 +33,7 @@ export default function SettingsPage() {
     popupButtonLabel: '',
     popupButtonUrl: '',
     popupDelaySeconds: 3,
+    minOrderTotal: 0,
     emailSettings: {
       smtpHost: '',
       smtpPort: 587,
@@ -476,19 +477,36 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      {/* External links */}
+      {/* Additional Settings */}
       <Card>
         <CardHeader>
-          <CardTitle>Внешние ссылки</CardTitle>
+          <CardTitle>Дополнительные настройки</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ссылка на Фотопрайсы (Google Drive)</label>
-            <Input
-              value={settings.photoPricesUrl || ''}
-              onChange={(e) => handleInputChange('photoPricesUrl', e.target.value)}
-              placeholder="https://drive.google.com/..."
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Минимальная сумма заказа (₽)</label>
+              <Input
+                type="number"
+                min={0}
+                value={Number(settings.minOrderTotal ?? 0)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  const num = v === '' ? 0 : Number(v);
+                  handleInputChange('minOrderTotal', isNaN(num) || num < 0 ? 0 : num);
+                }}
+                placeholder="Например: 1000"
+              />
+              <p className="text-xs text-gray-500 mt-1">0 — ограничение отключено.</p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ссылка на Фотопрайсы (Google Drive)</label>
+              <Input
+                value={settings.photoPricesUrl || ''}
+                onChange={(e) => handleInputChange('photoPricesUrl', e.target.value)}
+                placeholder="https://drive.google.com/..."
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

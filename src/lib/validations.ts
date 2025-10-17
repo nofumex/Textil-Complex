@@ -167,6 +167,8 @@ export const settingsSchema = z.object({
   contactEmail: z.string().email('Некорректный email'),
   contactPhone: z.string().min(5, 'Некорректный номер телефона'),
   address: z.string().min(2, 'Укажите адрес'),
+  // Commerce: minimum order subtotal (RUB)
+  minOrderTotal: z.coerce.number().min(0).default(0),
 
   // Socials: dynamic list of label/url pairs
   socialLinks: z

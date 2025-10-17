@@ -36,12 +36,12 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
     <div>
       {/* Image Gallery */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 items-start">
-        <div>
-          <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+        <div className="lg:sticky lg:top-24">
+          <div className="bg-gray-100 rounded-lg overflow-hidden max-h-[60vh] md:max-h-[70vh] aspect-[4/5] md:aspect-square">
             <img
               src={currentImage || product.images?.[0] || 'https://placehold.co/800x800?text=No+Image'}
               alt={product.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
           </div>
           {product.images?.length > 0 && (
@@ -50,7 +50,7 @@ export const ProductDetails: React.FC<ProductDetailsProps> = ({ product }) => {
                 <button
                   key={i}
                   type="button"
-                  className="aspect-square bg-gray-100 rounded overflow-hidden"
+                  className="aspect-square bg-gray-100 rounded overflow-hidden h-20"
                   onClick={() => setCurrentImage(src)}
                 >
                   <img src={src || 'https://placehold.co/200x200?text=No+Image'} alt={`${product.title} ${i + 1}`} className="w-full h-full object-cover" />

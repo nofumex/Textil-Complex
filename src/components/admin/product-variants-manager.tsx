@@ -122,7 +122,7 @@ export const ProductVariantsManager: React.FC<ProductVariantsManagerProps> = ({
             color: color as any as string, // may be undefined
             material: '',
             price: sp.price,
-            stock: 0,
+            stock: 1,
             sku: generateVariantSku(normalizedBaseSku, color as any as string, sp.size),
             isActive: true,
             // imageUrl intentionally omitted when not set

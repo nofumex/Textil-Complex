@@ -274,6 +274,20 @@ export async function POST(request: NextRequest) {
       // Add promo code logic here
     }
 
+    // Enforce minimum order subtotal if configured in settings
+    try {
+      const minSetting = await db.setting.findUnique({ where: { key: 'minOrderTotal' } });
+      const minOrderTotal = minSetting ? Number(minSetting.value) : 0;
+      if (!Number.isNaN(minOrderTotal) && minOrderTotal > 0 && subtotal < minOrderTotal) {
+        return NextResponse.json(
+          { success: false, error: `Минимальная сумма заказа ${new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 0 }).format(minOrderTotal)}` },
+          { status: 400 }
+        );
+      }
+    } catch {
+      // If settings fetch fails, do not block the order creation
+    }
+
     // Calculate delivery (simplified)
     let delivery = 0;
     if (deliveryType === 'COURIER') {
@@ -383,8 +397,12 @@ export async function POST(request: NextRequest) {
     console.error('Create order error:', error);
     
     if (error instanceof Error && error.name === 'ZodError') {
+      const zErr: any = error as any;
+      const details = Array.isArray(zErr.issues)
+        ? zErr.issues.map((i: any) => ({ field: Array.isArray(i.path) ? i.path.join('.') : String(i.path || ''), message: i.message }))
+        : undefined;
       return NextResponse.json(
-        { success: false, error: 'Некорректные данные' },
+        { success: false, error: 'Некорректные данные', details },
         { status: 400 }
       );
     }

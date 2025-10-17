@@ -2,15 +2,15 @@
 
 import React, { useState } from 'react';
 import { useUsers } from '@/hooks/useApi';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
   Search, 
   Filter, 
-  Eye, 
   Edit, 
-  MoreHorizontal,
+  Trash2,
   UserPlus,
   Mail,
   Phone,
@@ -19,6 +19,7 @@ import {
   ShoppingCart,
   Star
 } from 'lucide-react';
+import Link from 'next/link';
 
 const roleColors = {
   CUSTOMER: 'bg-blue-100 text-blue-800',
@@ -35,6 +36,7 @@ const roleLabels = {
 };
 
 export default function CustomersPage() {
+  const router = useRouter();
   const [filters, setFilters] = useState({
     search: '',
     role: '',
@@ -43,7 +45,7 @@ export default function CustomersPage() {
     limit: 20,
   });
 
-  const { data: users, loading, error } = useUsers(filters);
+  const { data: users, pagination, loading, error } = useUsers(filters);
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('ru-RU', {
@@ -77,10 +79,7 @@ export default function CustomersPage() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Клиенты</h1>
-        <Button>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Добавить клиента
-        </Button>
+        <div />
       </div>
 
       {/* Filters */}
@@ -203,14 +202,28 @@ export default function CustomersPage() {
                           </div>
                         </div>
                         <div className="flex space-x-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Link href={`/admin/customers/${user.id}`}>
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={async () => {
+                              if (!confirm('Удалить пользователя?')) return;
+                              try {
+                                const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE', credentials: 'include' });
+                                const json = await res.json();
+                                if (!json.success) throw new Error(json.error || 'Ошибка удаления');
+                                // simple refresh strategy
+                                window.location.reload();
+                              } catch (e: any) {
+                                alert(e.message || 'Не удалось удалить пользователя');
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -230,18 +243,23 @@ export default function CustomersPage() {
       </Card>
 
       {/* Pagination */}
-      {users && users.length > 0 && (
-        <div className="flex justify-center">
+      {pagination && users && users.length > 0 && (
+        <div className="flex justify-between items-center">
+          <div className="text-sm text-gray-600">Всего: {pagination.total}</div>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" disabled>
+            <Button
+              variant="outline"
+              disabled={filters.page <= 1}
+              onClick={() => setFilters((f) => ({ ...f, page: Math.max(1, f.page - 1) }))}
+            >
               Предыдущая
             </Button>
-            <Button variant="outline" className="bg-primary-600 text-white">
-              1
-            </Button>
-            <Button variant="outline">2</Button>
-            <Button variant="outline">3</Button>
-            <Button variant="outline">
+            <span className="px-3">{filters.page} / {pagination.pages || 1}</span>
+            <Button
+              variant="outline"
+              disabled={filters.page >= (pagination.pages || 1)}
+              onClick={() => setFilters((f) => ({ ...f, page: Math.min((pagination.pages || 1), f.page + 1) }))}
+            >
               Следующая
             </Button>
           </div>

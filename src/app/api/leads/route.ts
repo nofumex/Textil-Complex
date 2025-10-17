@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { leadSchema, paginationSchema } from '@/lib/validations';
 import { verifyRole } from '@/lib/auth';
+import { sendMail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +19,43 @@ export async function POST(request: NextRequest) {
         source: validated.source || 'website',
       },
     });
+
+    // Try to send confirmation to user (if email provided)
+    try {
+      if (lead.email) {
+        await sendMail({
+          to: lead.email,
+          subject: 'Ваша заявка получена',
+          html: `<div style="font-family:Arial,sans-serif">Спасибо за обращение! Мы получили вашу заявку и свяжемся с вами. <br/>Сообщение: ${lead.message || '-'}<br/>Телефон: ${lead.phone || '-'}</div>`,
+        });
+      }
+    } catch (e) {
+      // ignore user email errors
+    }
+
+    // Try to notify admin if admin email configured
+    try {
+      const setting = await db.setting.findUnique({ where: { key: 'emailSettings' } });
+      const emailSettings = setting ? JSON.parse(setting.value) : {};
+      const companyEmail = emailSettings.companyEmail;
+      if (companyEmail) {
+        await sendMail({
+          to: companyEmail,
+          subject: 'Новая заявка на консультацию',
+          html: `<div style="font-family:Arial,sans-serif">
+            <h3>Новая заявка</h3>
+            <p><strong>Имя:</strong> ${lead.name}</p>
+            <p><strong>Email:</strong> ${lead.email || '-'}</p>
+            <p><strong>Телефон:</strong> ${lead.phone || '-'}</p>
+            <p><strong>Компания:</strong> ${lead.company || '-'}</p>
+            <p><strong>Сообщение:</strong> ${lead.message || '-'}</p>
+            <p><strong>Источник:</strong> ${lead.source || '-'}</p>
+          </div>`,
+        });
+      }
+    } catch (e) {
+      // ignore admin email errors
+    }
 
     return NextResponse.json({ success: true, data: lead }, { status: 201 });
   } catch (error: any) {
