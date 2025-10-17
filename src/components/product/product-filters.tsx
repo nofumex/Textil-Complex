@@ -3,6 +3,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { usePublicSettings } from '@/hooks/useApi';
 import { Input } from '@/components/ui/input';
 
 interface Category {
@@ -34,6 +35,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   onFiltersChange,
   categories,
 }) => {
+  const { data: publicSettings } = usePublicSettings();
   const materials = [
     '100% хлопок',
     'Сатин',
@@ -280,12 +282,23 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
       {/* Quick actions */}
       <div className="pt-4 border-t border-gray-200">
         <div className="space-y-2">
-          <Button variant="outline" size="sm" className="w-full">
-            Заказать образцы
-          </Button>
-          <Button variant="outline" size="sm" className="w-full">
-            Скачать каталог
-          </Button>
+          {/* Removed "Заказать образцы" per request */}
+          {publicSettings?.photoPricesUrl ? (
+            <a
+              href={publicSettings.photoPricesUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block"
+            >
+              <Button variant="outline" size="sm" className="w-full">
+                Скачать каталог
+              </Button>
+            </a>
+          ) : (
+            <Button variant="outline" size="sm" className="w-full" asChild>
+              <a href="/delivery">Скачать каталог</a>
+            </Button>
+          )}
         </div>
       </div>
     </div>

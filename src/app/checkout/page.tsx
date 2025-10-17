@@ -43,10 +43,12 @@ export default function CheckoutPage() {
         }
       }
       setLoading(true);
-      const payload = {
+      const payload: any = {
         ...form,
+        notes: form.comment,
         items: items.map(i => ({ productId: i.productId, quantity: i.quantity })),
       };
+      delete payload.comment;
       const res = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

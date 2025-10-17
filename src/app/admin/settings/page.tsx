@@ -39,7 +39,7 @@ export default function SettingsPage() {
       smtpUser: '',
       smtpPassword: '',
       fromEmail: '',
-      companyEmail: 'za-bol@yandex.ru',
+      companyEmail: '',
     },
   });
   const [loading, setLoading] = useState(false);
@@ -440,11 +440,11 @@ export default function SettingsPage() {
               <Input type="email" value={settings.emailSettings?.fromEmail || ''} onChange={(e) => setSettings((p: any) => ({ ...p, emailSettings: { ...(p.emailSettings || {}), fromEmail: e.target.value } }))} placeholder="noreply@domain.ru" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Почта компании для копии</label>
-              <Input type="email" value={settings.emailSettings?.companyEmail || 'za-bol@yandex.ru'} onChange={(e) => setSettings((p: any) => ({ ...p, emailSettings: { ...(p.emailSettings || {}), companyEmail: e.target.value } }))} placeholder="za-bol@yandex.ru" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Почта администратора</label>
+              <Input type="email" value={settings.emailSettings?.companyEmail ?? ''} onChange={(e) => setSettings((p: any) => ({ ...p, emailSettings: { ...(p.emailSettings || {}), companyEmail: e.target.value } }))} placeholder="admin@domain.ru" />
             </div>
           </div>
-          <p className="text-xs text-gray-500">Если не указано, используются переменные окружения SMTP_HOST/SMTP_PORT/SMTP_USER/SMTP_PASSWORD/FROM_EMAIL. Копия всегда отправляется на za-bol@yandex.ru, если поле пустое.</p>
+          <p className="text-xs text-gray-500">Письмо администратору отправляется на этот адрес. Если поле пустое — письмо администратору не отправляется.</p>
         </CardContent>
       </Card>
 
@@ -807,3 +807,5 @@ export default function SettingsPage() {
     </div>
   );
 }
+
+

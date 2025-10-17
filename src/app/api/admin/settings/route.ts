@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
         smtpUser: rawObject.SMTP_USER || '',
         smtpPassword: rawObject.SMTP_PASSWORD || '',
         fromEmail: rawObject.fromEmail || rawObject.FROM_EMAIL || '',
-        companyEmail: rawObject.companyEmail || 'za-bol@yandex.ru',
+        companyEmail: rawObject.companyEmail || '',
       },
     };
 
@@ -277,7 +277,7 @@ export async function PUT(request: NextRequest) {
         smtpUser: rawObject.SMTP_USER || '',
         smtpPassword: rawObject.SMTP_PASSWORD || '',
         fromEmail: rawObject.fromEmail || rawObject.FROM_EMAIL || '',
-        companyEmail: rawObject.companyEmail || 'za-bol@yandex.ru',
+        companyEmail: rawObject.companyEmail || '',
       },
     };
 

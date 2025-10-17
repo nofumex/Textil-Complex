@@ -154,6 +154,7 @@ export async function POST(request: NextRequest) {
       notes,
       deliveryType,
       addressId,
+      address: addressText,
       promoCode,
     } = validatedData;
 
@@ -349,13 +350,24 @@ export async function POST(request: NextRequest) {
 
     try {
       const html = renderOrderEmail(order);
-      // Send to customer
+      // Send to customer (клиентское письмо)
       if (order.email) {
         await sendMail({ to: order.email, subject: `Заказ ${order.orderNumber} создан`, html });
       }
-      // Send to company copy
-      const companyEmail = process.env.COMPANY_EMAIL || 'za-bol@yandex.ru';
-      await sendMail({ to: companyEmail, subject: `Новый заказ ${order.orderNumber}`, html });
+      // Send admin notification (только если указан email администратора)
+      try {
+        const settings = await db.setting.findMany({ where: { key: 'emailSettings' } });
+        const emailSettingsRaw = settings.find(s => s.key === 'emailSettings')?.value;
+        const emailSettings = emailSettingsRaw ? JSON.parse(emailSettingsRaw) : {};
+        const companyEmail = emailSettings.companyEmail; // renamed in UI to "Почта администратора"
+        if (companyEmail && typeof companyEmail === 'string' && companyEmail.trim().length > 0) {
+          const { renderAdminOrderEmail } = await import('@/lib/email');
+          const adminHtml = renderAdminOrderEmail(order, { addressText });
+          await sendMail({ to: companyEmail, subject: `Новый заказ ${order.orderNumber}`, html: adminHtml });
+        }
+      } catch (e) {
+        // ignore copy send errors
+      }
     } catch (mailErr) {
       console.error('Order email send error:', mailErr);
       // Do not fail order creation on email failure

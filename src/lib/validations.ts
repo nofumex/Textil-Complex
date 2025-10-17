@@ -116,6 +116,7 @@ export const checkoutSchema = z.object({
   notes: z.string().optional(),
   deliveryType: z.enum(['PICKUP', 'COURIER', 'TRANSPORT']),
   addressId: z.string().optional(),
+  address: z.string().optional(),
   promoCode: z.string().optional(),
 });
 
