@@ -256,4 +256,129 @@ export interface ConversionData {
   }[];
 }
 
+// Export/Import types
+export interface ExportData {
+  schemaVersion: string;
+  exportedAt: string;
+  products: ExportProduct[];
+  categories: ExportCategory[];
+  mediaIndex: MediaFile[];
+  settings?: ExportSettings;
+}
+
+export interface ExportProduct {
+  id: string;
+  slug: string;
+  sku: string;
+  title: string;
+  description?: string;
+  content?: string;
+  price: number;
+  oldPrice?: number;
+  currency: string;
+  stock: number;
+  minOrder: number;
+  weight?: number;
+  dimensions?: string;
+  material?: string;
+  category: string;
+  tags: string[];
+  images: string[];
+  isActive: boolean;
+  isFeatured: boolean;
+  isInStock: boolean;
+  visibility: string;
+  seo: {
+    title?: string;
+    description?: string;
+    metaTitle?: string;
+    metaDesc?: string;
+  };
+  gallery: string[];
+  thumbnail: string;
+  variants: ExportProductVariant[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExportProductVariant {
+  id: string;
+  sku: string;
+  attrs: {
+    color?: string;
+    size?: string;
+    material?: string;
+  };
+  priceDiff: number;
+  stock: number;
+  imageRef?: string;
+  isActive: boolean;
+}
+
+export interface ExportCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  image?: string;
+  parentId?: string;
+  isActive: boolean;
+  sortOrder: number;
+  seo: {
+    title?: string;
+    description?: string;
+  };
+  children?: ExportCategory[];
+}
+
+export interface MediaFile {
+  fileName: string;
+  checksum: string;
+  originalUrl?: string;
+  size?: number;
+  mimeType?: string;
+}
+
+export interface ExportSettings {
+  siteName: string;
+  siteDescription: string;
+  contactEmail: string;
+  contactPhone: string;
+  address: string;
+  workingHours: string;
+  socialLinks: {
+    vk?: string;
+    telegram?: string;
+    whatsapp?: string;
+    instagram?: string;
+  };
+  deliverySettings: {
+    freeDeliveryFrom: number;
+    defaultDeliveryPrice: number;
+  };
+}
+
+export interface ImportResult {
+  success: boolean;
+  processed: {
+    products: number;
+    categories: number;
+    media: number;
+  };
+  errors: string[];
+  warnings: string[];
+  skipped: {
+    products: string[];
+    categories: string[];
+    media: string[];
+  };
+}
+
+export interface ImportOptions {
+  skipExisting?: boolean;
+  updateExisting?: boolean;
+  importMedia?: boolean;
+  categoryMapping?: Record<string, string>;
+}
+
 

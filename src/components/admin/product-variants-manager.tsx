@@ -385,6 +385,8 @@ export const ProductVariantsManager: React.FC<ProductVariantsManagerProps> = ({
       </datalist>
     </>
   ));
+  
+  Datalists.displayName = 'Datalists';
 
   const VariantEditor: React.FC = () => (
     <div className="border rounded-lg p-6 bg-white">

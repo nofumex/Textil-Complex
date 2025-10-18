@@ -159,6 +159,12 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       current: pathname.startsWith('/admin/analytics'),
     },
     {
+      name: 'Импорт/Экспорт',
+      href: '/admin/import-export',
+      icon: Upload,
+      current: pathname.startsWith('/admin/import-export'),
+    },
+    {
       name: 'Настройки',
       href: '/admin/settings',
       icon: Settings,

@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 // Static import allows using an image from the repository root (bundled by Next.js)
 // The file `image.png` is located at the project root. Next can bundle it via static import.
 // If you later move it into `public/`, replace the import with "/hero.png" and remove the static import.
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - next/image static import type inference
 import HeroImage from '../../../image.png';
 
