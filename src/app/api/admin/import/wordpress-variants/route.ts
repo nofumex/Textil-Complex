@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { WPVariantsImporter, WPImportOptions } from '@/lib/wp-variants-import';
 import { verifyRole } from '@/lib/auth';
+import { validateFileWithContent } from '@/lib/file-validation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -42,13 +43,25 @@ export async function POST(request: NextRequest) {
     const importer = new WPVariantsImporter();
     const xmlContents: string[] = [];
 
-    // Read all XML files
+    // Валидация и чтение всех XML файлов
     for (const file of files) {
-      if (file.type !== 'text/xml' && file.type !== 'application/xml' && !file.name.endsWith('.xml')) {
+      // Валидация файла
+      const fileValidation = await validateFileWithContent(file, ['xml']);
+      if (!fileValidation.isValid) {
         return NextResponse.json(
-          { success: false, error: `Invalid file type: ${file.name}. Expected XML file.` },
+          { 
+            success: false, 
+            error: `Ошибка валидации файла ${file.name}`,
+            details: fileValidation.errors,
+            warnings: fileValidation.warnings
+          },
           { status: 400 }
         );
+      }
+
+      // Показываем предупреждения если есть
+      if (fileValidation.warnings.length > 0) {
+        console.warn(`File validation warnings for ${file.name}:`, fileValidation.warnings);
       }
 
       const content = await file.text();

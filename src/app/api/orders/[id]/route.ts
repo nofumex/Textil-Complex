@@ -52,6 +52,41 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 }
 
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    await verifyRole(request, ['ADMIN', 'MANAGER']);
+    
+    // Проверяем, существует ли заказ
+    const order = await db.order.findUnique({
+      where: { id: params.id },
+      include: {
+        items: true,
+        address: true,
+      },
+    });
+
+    if (!order) {
+      return NextResponse.json({ success: false, error: 'Заказ не найден' }, { status: 404 });
+    }
+
+    // Удаляем заказ (каскадное удаление удалит связанные записи)
+    await db.order.delete({
+      where: { id: params.id },
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: `Заказ #${order.orderNumber} удален успешно` 
+    });
+  } catch (error) {
+    console.error('Delete order error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Ошибка удаления заказа' 
+    }, { status: 500 });
+  }
+}
+
 
 
 

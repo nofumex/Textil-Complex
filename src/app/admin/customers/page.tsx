@@ -215,7 +215,14 @@ export default function CustomersPage() {
                               try {
                                 const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE', credentials: 'include' });
                                 const json = await res.json();
-                                if (!json.success) throw new Error(json.error || 'Ошибка удаления');
+                                if (!json.success) {
+                                  if (json.details) {
+                                    alert(`${json.error}\n\nДетали:\n- Заказов: ${json.details.ordersCount}\n- Отзывов: ${json.details.reviewsCount}\n- Адресов: ${json.details.addressesCount}`);
+                                  } else {
+                                    throw new Error(json.error || 'Ошибка удаления');
+                                  }
+                                  return;
+                                }
                                 // simple refresh strategy
                                 window.location.reload();
                               } catch (e: any) {

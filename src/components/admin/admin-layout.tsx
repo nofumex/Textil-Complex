@@ -262,18 +262,11 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               </p>
               <div className="space-y-2">
                 <Link
-                  href="/admin/products/import"
+                  href="/admin/import-export"
                   className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                 >
                   <Upload className="h-4 w-4" />
-                  <span>Импорт товаров</span>
-                </Link>
-                <Link
-                  href="/admin/products/export"
-                  className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Экспорт товаров</span>
+                  <span>Импорт/Экспорт</span>
                 </Link>
               </div>
             </div>

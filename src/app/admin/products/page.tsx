@@ -265,9 +265,9 @@ export default function AdminProductsPage() {
         </div>
         <div className="flex items-center space-x-3">
           <Button variant="outline" asChild>
-            <Link href="/admin/products/import">
+            <Link href="/admin/import-export">
               <Upload className="h-4 w-4 mr-2" />
-              Импорт
+              Импорт/Экспорт
             </Link>
           </Button>
           <Button

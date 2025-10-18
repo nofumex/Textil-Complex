@@ -10,8 +10,10 @@ async function seed() {
     console.log('👤 Создаём администратора...');
     const adminPassword = await hashPassword('admin123');
     
-    const admin = await db.user.create({
-      data: {
+    const admin = await db.user.upsert({
+      where: { email: 'admin@textil-kompleks.ru' },
+      update: {},
+      create: {
         firstName: 'Администратор',
         lastName: 'Системы',
         email: 'admin@textil-kompleks.ru',
@@ -25,8 +27,10 @@ async function seed() {
     console.log('👤 Создаём тестового клиента...');
     const customerPassword = await hashPassword('customer123');
     
-    const customer = await db.user.create({
-      data: {
+    const customer = await db.user.upsert({
+      where: { email: 'customer@example.com' },
+      update: {},
+      create: {
         firstName: 'Иван',
         lastName: 'Петров',
         email: 'customer@example.com',
@@ -84,8 +88,10 @@ async function seed() {
 
     const createdCategories = [];
     for (const categoryData of categories) {
-      const category = await db.category.create({
-        data: categoryData,
+      const category = await db.category.upsert({
+        where: { slug: categoryData.slug },
+        update: {},
+        create: categoryData,
       });
       createdCategories.push(category);
     }
@@ -230,8 +236,10 @@ async function seed() {
       const sku = generateSKU(categories.find(c => c.id === productData.categoryId)?.name || 'PRODUCT', productData.title);
       const images = generateProductImages(productData.title, 3);
 
-      const created = await db.product.create({
-        data: {
+      const created = await db.product.upsert({
+        where: { slug },
+        update: {},
+        create: {
           ...productData,
           slug,
           sku,
@@ -424,8 +432,10 @@ async function seed() {
     ];
 
     for (const setting of settings) {
-      await db.setting.create({
-        data: setting,
+      await db.setting.upsert({
+        where: { key: setting.key },
+        update: {},
+        create: setting,
       });
     }
 

@@ -169,7 +169,19 @@ export async function DELETE(
 
     // Check if user exists
     const existingUser = await db.user.findUnique({
-      where: { id: params.id }
+      where: { id: params.id },
+      include: {
+        orders: true,
+        reviews: true,
+        addresses: true,
+        _count: {
+          select: {
+            orders: true,
+            reviews: true,
+            addresses: true
+          }
+        }
+      }
     });
 
     if (!existingUser) {
@@ -187,9 +199,47 @@ export async function DELETE(
       );
     }
 
-    // Delete user (cascade will handle related records)
-    await db.user.delete({
-      where: { id: params.id }
+    // Check if user has orders
+    if (existingUser._count.orders > 0) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Нельзя удалить пользователя с заказами. У пользователя ${existingUser._count.orders} заказ(ов). Сначала удалите или переназначьте заказы.`,
+          details: {
+            ordersCount: existingUser._count.orders,
+            reviewsCount: existingUser._count.reviews,
+            addressesCount: existingUser._count.addresses
+          }
+        },
+        { status: 409 }
+      );
+    }
+
+    // Delete related data first (in correct order to avoid foreign key constraints)
+    await db.$transaction(async (tx) => {
+      // Delete reviews first
+      if (existingUser._count.reviews > 0) {
+        await tx.review.deleteMany({
+          where: { userId: params.id }
+        });
+      }
+
+      // Delete addresses
+      if (existingUser._count.addresses > 0) {
+        await tx.address.deleteMany({
+          where: { userId: params.id }
+        });
+      }
+
+      // Delete user sessions
+      await tx.session.deleteMany({
+        where: { userId: params.id }
+      });
+
+      // Finally delete the user
+      await tx.user.delete({
+        where: { id: params.id }
+      });
     });
 
     return NextResponse.json({
@@ -199,6 +249,17 @@ export async function DELETE(
 
   } catch (error) {
     console.error('Delete user error:', error);
+    
+    // Handle specific database constraint errors
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Нельзя удалить пользователя с активными заказами. Сначала удалите или переназначьте заказы.' 
+        },
+        { status: 409 }
+      );
+    }
     
     return NextResponse.json(
       { success: false, error: 'Ошибка удаления пользователя' },

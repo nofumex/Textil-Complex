@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyRole } from '@/lib/auth';
 import { ImportService } from '@/lib/import-service';
 import { ImportOptions } from '@/types';
+import { validateFileWithContent } from '@/lib/file-validation';
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,6 +18,25 @@ export async function POST(request: NextRequest) {
         { success: false, error: 'Файл не найден' },
         { status: 400 }
       );
+    }
+
+    // Валидация файла
+    const fileValidation = await validateFileWithContent(file, ['zip', 'json']);
+    if (!fileValidation.isValid) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Ошибка валидации файла',
+          details: fileValidation.errors,
+          warnings: fileValidation.warnings
+        },
+        { status: 400 }
+      );
+    }
+
+    // Показываем предупреждения если есть
+    if (fileValidation.warnings.length > 0) {
+      console.warn('File validation warnings:', fileValidation.warnings);
     }
 
     // Parse options

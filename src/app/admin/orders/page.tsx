@@ -8,12 +8,12 @@ import { Input } from '@/components/ui/input';
 import { 
   Search, 
   Filter, 
-  Eye, 
   Edit, 
   MoreHorizontal,
   Calendar,
   User,
-  Package
+  Package,
+  Trash2
 } from 'lucide-react';
 
 const statusColors = {
@@ -40,7 +40,19 @@ export default function OrdersPage() {
     limit: 20,
   });
 
-  const { data: orders, loading, error } = useOrders(filters);
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    orderId: string | null;
+    orderNumber: string | null;
+  }>({
+    isOpen: false,
+    orderId: null,
+    orderNumber: null,
+  });
+
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const { data: orders, loading, error, refetch } = useOrders(filters);
 
   const formatCurrency = (num: number) => {
     return new Intl.NumberFormat('ru-RU', {
@@ -62,6 +74,51 @@ export default function OrdersPage() {
 
   const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
+  };
+
+  const handleDeleteOrder = (orderId: string, orderNumber: string) => {
+    setDeleteModal({
+      isOpen: true,
+      orderId,
+      orderNumber,
+    });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteModal.orderId) return;
+
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/orders/${deleteModal.orderId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Обновляем список заказов
+        if (refetch) {
+          refetch();
+        }
+        setDeleteModal({ isOpen: false, orderId: null, orderNumber: null });
+        // Можно добавить уведомление об успешном удалении
+      } else {
+        console.error('Ошибка удаления заказа:', result.error);
+        // Можно добавить уведомление об ошибке
+      }
+    } catch (error) {
+      console.error('Ошибка удаления заказа:', error);
+      // Можно добавить уведомление об ошибке
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModal({ isOpen: false, orderId: null, orderNumber: null });
   };
 
   if (loading) {
@@ -174,14 +231,16 @@ export default function OrdersPage() {
                         <div className="flex space-x-2">
                           <Button variant="outline" size="sm" asChild>
                             <a href={`/admin/orders/${order.id}`}>
-                              <Eye className="h-4 w-4" />
+                              <Edit className="h-4 w-4" />
                             </a>
                           </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteOrder(order.id, order.orderNumber)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -245,6 +304,38 @@ export default function OrdersPage() {
             <Button variant="outline">
               Следующая
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Подтверждение удаления
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Вы уверены, что хотите удалить заказ #{deleteModal.orderNumber}? 
+              Это действие нельзя отменить.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={cancelDelete}
+                disabled={isDeleting}
+              >
+                Отмена
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {isDeleting ? 'Удаление...' : 'Удалить'}
+              </Button>
+            </div>
           </div>
         </div>
       )}

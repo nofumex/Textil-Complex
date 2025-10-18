@@ -89,7 +89,14 @@ export default function AdminCustomerDetailPage({ params }: PageProps) {
     try {
       const res = await fetch(`/api/users/${data.id}`, { method: 'DELETE', credentials: 'include' });
       const json = await res.json();
-      if (!json.success) throw new Error(json.error || 'Не удалось удалить');
+      if (!json.success) {
+        if (json.details) {
+          alert(`${json.error}\n\nДетали:\n- Заказов: ${json.details.ordersCount}\n- Отзывов: ${json.details.reviewsCount}\n- Адресов: ${json.details.addressesCount}`);
+        } else {
+          throw new Error(json.error || 'Не удалось удалить');
+        }
+        return;
+      }
       router.push('/admin/customers');
     } catch (e: any) {
       alert(e.message || 'Ошибка удаления');

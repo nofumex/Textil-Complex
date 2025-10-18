@@ -281,9 +281,9 @@ export const AdminDashboard: React.FC = () => {
           </Button>
           
           <Button variant="outline" className="h-full" asChild>
-            <Link href="/admin/products/import" className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center break-words">
+            <Link href="/admin/import-export" className="flex h-full w-full flex-col items-center justify-center gap-2 p-4 text-center break-words">
               <Package className="h-6 w-6" />
-              <span>Импорт товаров</span>
+              <span>Импорт/Экспорт</span>
             </Link>
           </Button>
           
