@@ -41,6 +41,9 @@ export async function GET(_req: NextRequest) {
     } as const;
 
     const normalized = {
+      // Branding
+      logo: raw.logo || '',
+      favicon: raw.favicon || '',
       contactEmail: raw.contactEmail || raw.contact_email || DEFAULTS.contactEmail,
       contactPhone: raw.contactPhone || raw.contact_phone || DEFAULTS.contactPhone,
       address: raw.address || DEFAULTS.address,

@@ -7,6 +7,7 @@ import { CartDrawer } from '@/components/cart/cart-drawer';
 import { ToastProvider } from '@/components/ui/toast';
 import { BackToTop } from '@/components/ui/back-to-top';
 import { SitePopup } from '@/components/ui/site-popup';
+import { FaviconManager } from '@/components/seo/favicon-manager';
 
 const inter = Inter({ subsets: ['latin', 'cyrillic'] });
 
@@ -60,6 +61,7 @@ export default function RootLayout({
   return (
     <html lang="ru" className="scroll-smooth">
       <body className={inter.className}>
+        <FaviconManager />
         <ToastProvider>
           <Header />
           <SitePopup />

@@ -90,9 +90,17 @@ export const Header: React.FC = () => {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">ТК</span>
-            </div>
+            {publicSettings?.logo ? (
+              <img
+                src={publicSettings.logo}
+                alt="Логотип"
+                className="h-10 w-auto object-contain"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-lg">ТК</span>
+              </div>
+            )}
             <div>
               <h1 className="text-xl font-bold text-gray-900">Текстиль Комплекс</h1>
               <p className="text-sm text-gray-500">Постельные принадлежности с 2004 года</p>

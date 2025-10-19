@@ -103,6 +103,9 @@ export async function GET(request: NextRequest) {
 
     // Normalize to new schema (camelCase and arrays) with defaults
     const normalized = {
+      // Branding
+      logo: rawObject.logo || '',
+      favicon: rawObject.favicon || '',
       contactEmail: rawObject.contactEmail || rawObject.contact_email || DEFAULTS.contactEmail,
       contactPhone: rawObject.contactPhone || rawObject.contact_phone || DEFAULTS.contactPhone,
       address: rawObject.address || DEFAULTS.address,
@@ -249,6 +252,9 @@ export async function PUT(request: NextRequest) {
     } as const;
 
     const normalized = {
+      // Branding
+      logo: rawObject.logo || '',
+      favicon: rawObject.favicon || '',
       contactEmail: rawObject.contactEmail || rawObject.contact_email || DEFAULTS.contactEmail,
       contactPhone: rawObject.contactPhone || rawObject.contact_phone || DEFAULTS.contactPhone,
       address: rawObject.address || DEFAULTS.address,

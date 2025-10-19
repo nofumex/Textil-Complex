@@ -19,6 +19,9 @@ import {
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<any>({
+    // Branding
+    logo: '',
+    favicon: '',
     contactEmail: '',
     contactPhone: '',
     address: '',
@@ -406,6 +409,112 @@ export default function SettingsPage() {
             />
           </div>
           {/* Режим работы удалён по требованию */}
+        </CardContent>
+      </Card>
+
+      {/* Branding: Logo & Favicon */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <ImageIcon className="h-5 w-5 mr-2" />
+            Брендинг: Логотип и иконка сайта
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Logo upload */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">Логотип (для хедера)</label>
+            <div className="flex items-center gap-4">
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploading(true);
+                  try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    const res = await fetch('/api/upload', { method: 'POST', credentials: 'include', body: formData });
+                    const json = await res.json();
+                    if (json.success) {
+                      handleInputChange('logo', json.path);
+                      setMessage('Логотип загружен');
+                      setTimeout(() => setMessage(''), 3000);
+                    } else {
+                      setMessage(`Ошибка загрузки: ${json.error}`);
+                    }
+                  } catch {
+                    setMessage('Ошибка при загрузке файла');
+                  } finally {
+                    setUploading(false);
+                    (e.target as HTMLInputElement).value = '';
+                  }
+                }}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                disabled={uploading}
+              />
+              {settings.logo && (
+                <div className="flex items-center gap-2">
+                  <img src={settings.logo} alt="Logo preview" className="h-10 object-contain rounded border bg-white p-1" />
+                  <button onClick={() => handleInputChange('logo', '')} className="text-red-600 hover:text-red-700 text-sm">Удалить</button>
+                </div>
+              )}
+            </div>
+            <Input
+              value={settings.logo || ''}
+              onChange={(e) => handleInputChange('logo', e.target.value)}
+              placeholder="/uploads/your-logo.png или абсолютный URL"
+            />
+          </div>
+
+          {/* Favicon upload */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">Иконка вкладки (favicon)</label>
+            <div className="flex items-center gap-4">
+              <input
+                type="file"
+                accept="image/png,image/webp,image/jpeg"
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setUploading(true);
+                  try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    const res = await fetch('/api/upload', { method: 'POST', credentials: 'include', body: formData });
+                    const json = await res.json();
+                    if (json.success) {
+                      handleInputChange('favicon', json.path);
+                      setMessage('Favicon загружен');
+                      setTimeout(() => setMessage(''), 3000);
+                    } else {
+                      setMessage(`Ошибка загрузки: ${json.error}`);
+                    }
+                  } catch {
+                    setMessage('Ошибка при загрузке файла');
+                  } finally {
+                    setUploading(false);
+                    (e.target as HTMLInputElement).value = '';
+                  }
+                }}
+                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                disabled={uploading}
+              />
+              {settings.favicon && (
+                <div className="flex items-center gap-2">
+                  <img src={settings.favicon} alt="Favicon preview" className="h-8 w-8 object-contain rounded border bg-white p-1" />
+                  <button onClick={() => handleInputChange('favicon', '')} className="text-red-600 hover:text-red-700 text-sm">Удалить</button>
+                </div>
+              )}
+            </div>
+            <Input
+              value={settings.favicon || ''}
+              onChange={(e) => handleInputChange('favicon', e.target.value)}
+              placeholder="/uploads/favicon.png или абсолютный URL"
+            />
+            <p className="text-xs text-gray-500">Рекомендуется квадратное изображение 32×32 или 48×48.</p>
+          </div>
         </CardContent>
       </Card>
 

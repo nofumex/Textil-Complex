@@ -13,7 +13,6 @@ import { useLogin } from '@/hooks/useApi';
 import { useAuthStore } from '@/store/auth';
 import { loginSchema, LoginInput } from '@/lib/validations';
 import { Header } from '@/components/layout/header';
-import { Footer } from '@/components/layout/footer';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -104,13 +103,6 @@ export default function LoginPage() {
                     />
                     <span className="ml-2 text-sm text-gray-600">Запомнить меня</span>
                   </label>
-
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-primary-600 hover:text-primary-500"
-                  >
-                    Забыли пароль?
-                  </Link>
                 </div>
 
                 <Button
@@ -135,22 +127,6 @@ export default function LoginPage() {
                 </p>
               </div>
 
-              {/* Demo accounts info */}
-              <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-                <h3 className="text-sm font-medium text-blue-900 mb-2">
-                  Тестовые аккаунты:
-                </h3>
-                <div className="space-y-2 text-sm">
-                  <div>
-                    <strong>Администратор:</strong><br />
-                    admin@textil-kompleks.ru / admin123
-                  </div>
-                  <div>
-                    <strong>Клиент:</strong><br />
-                    customer@example.com / customer123
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>

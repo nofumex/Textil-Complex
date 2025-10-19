@@ -160,18 +160,6 @@ export default function RegisterPage() {
                 </p>
               </div>
 
-              {/* Benefits of registration */}
-              <div className="mt-8 p-4 bg-green-50 rounded-lg">
-                <h3 className="text-sm font-medium text-green-900 mb-2">
-                  Преимущества регистрации:
-                </h3>
-                <ul className="space-y-1 text-sm text-green-700">
-                  <li>• Быстрое оформление заказов</li>
-                  <li>• История покупок</li>
-                  <li>• Персональные скидки</li>
-                  <li>• Отслеживание доставки</li>
-                </ul>
-              </div>
             </div>
           </div>
         </div>

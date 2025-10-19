@@ -14,8 +14,18 @@ export const SitePopup: React.FC = () => {
     if (pathname.startsWith('/admin')) return;
     
     if (!data || !data.popupEnabled) return;
+    
+    // Check if popup was already shown in this session
+    const popupShown = localStorage.getItem('popup-shown');
+    if (popupShown === 'true') return;
+    
     const delaySeconds = Math.max(0, Number(data.popupDelaySeconds || 3));
-    const timer = setTimeout(() => setVisible(true), delaySeconds * 1000);
+    const timer = setTimeout(() => {
+      setVisible(true);
+      // Mark popup as shown in this session
+      localStorage.setItem('popup-shown', 'true');
+    }, delaySeconds * 1000);
+    
     return () => clearTimeout(timer);
   }, [data, pathname]);
 
