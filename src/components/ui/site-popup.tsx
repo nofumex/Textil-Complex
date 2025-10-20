@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 export const SitePopup: React.FC = () => {
   const { data } = usePublicSettings();
   const [visible, setVisible] = React.useState(false);
+  const [hasShown, setHasShown] = React.useState(false);
   const pathname = usePathname();
 
   React.useEffect(() => {
@@ -16,18 +17,19 @@ export const SitePopup: React.FC = () => {
     if (!data || !data.popupEnabled) return;
     
     // Check if popup was already shown in this session
-    const popupShown = localStorage.getItem('popup-shown');
-    if (popupShown === 'true') return;
+    const popupShown = sessionStorage.getItem('popup-shown');
+    if (popupShown === 'true' || hasShown) return;
     
     const delaySeconds = Math.max(0, Number(data.popupDelaySeconds || 3));
     const timer = setTimeout(() => {
       setVisible(true);
+      setHasShown(true);
       // Mark popup as shown in this session
-      localStorage.setItem('popup-shown', 'true');
+      sessionStorage.setItem('popup-shown', 'true');
     }, delaySeconds * 1000);
     
     return () => clearTimeout(timer);
-  }, [data, pathname]);
+  }, [data, pathname, hasShown]);
 
   if (!data || !data.popupEnabled || !visible) return null;
 

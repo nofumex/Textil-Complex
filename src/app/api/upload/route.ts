@@ -5,8 +5,8 @@ import fs from 'fs/promises';
 
 export async function POST(request: NextRequest) {
   try {
-    // Require admin/manager for product image uploads - temporarily disabled for debugging
-    // await verifyRole(request, ['ADMIN', 'MANAGER']);
+    // Require admin/manager for product image uploads
+    await verifyRole(request, ['ADMIN', 'MANAGER']);
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
