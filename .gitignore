@@ -117,3 +117,26 @@ backups/
 coverage/
 test-results/
 playwright-report/
+
+# Scripts and utilities (development only)
+scripts/
+*.ps1
+
+# Test data and exports
+export-test.*
+sample_products.csv
+*.xml
+image.png
+
+# Extra documentation
+*_GUIDE.md
+*_SUMMARY.md
+*_README.md
+INSTRUCTIONS.md
+QUICKSTART.md
+DEPLOYMENT.md
+DATABASE_SETUP_GUIDE.md
+
+# Extra nginx configs
+nginx-pm2.conf
+nginx-external-images.conf
